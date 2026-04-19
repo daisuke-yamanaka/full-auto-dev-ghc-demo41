@@ -58,7 +58,7 @@
 
 | 工程 | ステータス | ブランチ | PR | 備考 |
 |------|----------|---------|-----|------|
-| 要件定義 | 未実施 | `feature/requirements` |  |  |
+| 要件定義 | 完了 | `feature/requirements` | PR #1（マージ済み） |  |
 | モック作成 | 未実施 | `feature/mockup` |  |  |
 | 設計 | 未実施 | `feature/design` |  |  |
 | 実装（バックエンド） | 未実施 | `feature/implementation-backend` |  |  |
