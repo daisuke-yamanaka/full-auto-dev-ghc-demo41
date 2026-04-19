@@ -16,10 +16,15 @@ export default function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
-    }} onClick={onCancel}>
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label="ダイアログを閉じる"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCancel(); }}
+      style={{
+        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
+      }} onClick={onCancel}>
       <div style={{
         backgroundColor: '#fff', borderRadius: 8, padding: 32, maxWidth: 480, width: '90%',
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',

@@ -89,18 +89,18 @@ export default function PasswordChangePage() {
           )}
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>現在のパスワード <span style={{ color: '#d93025' }}>*</span></label>
+              <label htmlFor="currentPw" style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>現在のパスワード <span style={{ color: '#d93025' }}>*</span></label>
               <div style={{ position: 'relative' }}>
-                <input type={showCurrent ? 'text' : 'password'} value={current}
+                <input id="currentPw" type={showCurrent ? 'text' : 'password'} value={current}
                   onChange={(e) => setCurrent(e.target.value)} style={inputStyle(false)} disabled={loading} />
                 {eyeBtn(showCurrent, () => setShowCurrent((s) => !s))}
               </div>
             </div>
 
             <div style={{ marginBottom: 8 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>新しいパスワード <span style={{ color: '#d93025' }}>*</span></label>
+              <label htmlFor="newPwField" style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>新しいパスワード <span style={{ color: '#d93025' }}>*</span></label>
               <div style={{ position: 'relative' }}>
-                <input type={showNew ? 'text' : 'password'} value={newPw}
+                <input id="newPwField" type={showNew ? 'text' : 'password'} value={newPw}
                   onChange={(e) => setNewPw(e.target.value)} style={inputStyle(!!newPwError)} disabled={loading} />
                 {eyeBtn(showNew, () => setShowNew((s) => !s))}
               </div>
@@ -118,9 +118,9 @@ export default function PasswordChangePage() {
             )}
 
             <div style={{ marginBottom: 28 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>新しいパスワード（確認） <span style={{ color: '#d93025' }}>*</span></label>
+              <label htmlFor="confirmPw" style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>新しいパスワード（確認） <span style={{ color: '#d93025' }}>*</span></label>
               <div style={{ position: 'relative' }}>
-                <input type={showConfirm ? 'text' : 'password'} value={confirm}
+                <input id="confirmPw" type={showConfirm ? 'text' : 'password'} value={confirm}
                   onChange={(e) => setConfirm(e.target.value)} style={inputStyle(!!confirmError)} disabled={loading} />
                 {eyeBtn(showConfirm, () => setShowConfirm((s) => !s))}
               </div>

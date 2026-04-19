@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import type { FontSize } from '../types';
 
 interface AuthUser {
@@ -40,22 +40,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     else localStorage.removeItem('token');
   }, [token]);
 
-  const login = (newToken: string, newUser: AuthUser) => {
+  const login = useCallback((newToken: string, newUser: AuthUser) => {
     setToken(newToken);
     setUser(newUser);
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
-  };
+  }, []);
 
-  const updateUser = (updates: Partial<AuthUser>) => {
+  const updateUser = useCallback((updates: Partial<AuthUser>) => {
     setUser((prev) => (prev ? { ...prev, ...updates } : null));
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    user, token, isAuthenticated: !!token, login, logout, updateUser,
+  }), [user, token, login, logout, updateUser]);
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout, updateUser }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

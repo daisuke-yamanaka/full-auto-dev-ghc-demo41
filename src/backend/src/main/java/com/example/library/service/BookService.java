@@ -16,12 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class BookService {
+
+    private static final String BOOK_NOT_FOUND = "Book not found: ";
 
     private final BookDao bookDao;
     private final LoanDao loanDao;
@@ -34,7 +35,7 @@ public class BookService {
         List<Book> books = bookDao.search(title, author, category, isbn, size, offset);
         int total = bookDao.countSearch(title, author, category, isbn);
 
-        List<BookSummary> summaries = books.stream().map(this::toBookSummary).collect(Collectors.toList());
+        List<BookSummary> summaries = books.stream().map(this::toBookSummary).toList();
 
         BooksResponse response = new BooksResponse();
         response.setBooks(summaries);
@@ -47,7 +48,7 @@ public class BookService {
     @Transactional(readOnly = true)
     public BookDetailResponse getBook(Long id, String currentUserId) {
         Book book = bookDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Book not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException(BOOK_NOT_FOUND + id));
 
         int activeLoanCount = loanDao.countActiveByBookId(id);
         int availableCopies = Math.max(0, book.getTotalCopies() - activeLoanCount);
@@ -124,7 +125,7 @@ public class BookService {
     @Transactional
     public AdminBookResponse updateBook(Long id, UpdateBookRequest request) {
         Book book = bookDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Book not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException(BOOK_NOT_FOUND + id));
 
         if (!book.getVersion().equals(request.getVersion())) {
             throw new OptimisticLockException("図書情報が更新されています。再読み込みしてください。");
@@ -143,7 +144,7 @@ public class BookService {
         String operator = getOperatorId();
         log.info("図書更新: bookId={}, operator={}", id, operator);
         Book updated = bookDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Book not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException(BOOK_NOT_FOUND + id));
         int activeLoanCount = loanDao.countActiveByBookId(id);
         int availableCopies = Math.max(0, updated.getTotalCopies() - activeLoanCount);
         return toAdminBookResponse(updated, availableCopies);
@@ -152,7 +153,7 @@ public class BookService {
     @Transactional
     public void deleteBook(Long id, Long version) {
         Book book = bookDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Book not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException(BOOK_NOT_FOUND + id));
 
         if (!book.getVersion().equals(version)) {
             throw new OptimisticLockException("図書情報が更新されています。再読み込みしてください。");

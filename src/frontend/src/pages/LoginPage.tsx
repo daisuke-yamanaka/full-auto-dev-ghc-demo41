@@ -67,10 +67,11 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#5f6368' }}>
+            <label htmlFor="loginId" style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#5f6368' }}>
               ユーザID / メールアドレス
             </label>
             <input
+              id="loginId"
               type="text" value={loginId}
               onChange={(e) => setLoginId(e.target.value)}
               style={{
@@ -86,11 +87,12 @@ export default function LoginPage() {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#5f6368' }}>
+            <label htmlFor="loginPassword" style={{ display: 'block', marginBottom: 4, fontSize: 13, color: '#5f6368' }}>
               パスワード
             </label>
             <div style={{ position: 'relative' }}>
               <input
+                id="loginPassword"
                 type={showPassword ? 'text' : 'password'} value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{

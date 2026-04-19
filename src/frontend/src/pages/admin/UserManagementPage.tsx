@@ -215,8 +215,8 @@ export default function UserManagementPage() {
                 value={form[k] as string} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} style={inputStyle} />
             ))}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 14 }}>ロール: </label>
-              <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as 'USER' | 'ADMIN' }))} style={{ padding: '8px 12px', border: '1px solid #dadce0', borderRadius: 4 }}>
+              <label htmlFor="createRole" style={{ fontSize: 14 }}>ロール: </label>
+              <select id="createRole" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as 'USER' | 'ADMIN' }))} style={{ padding: '8px 12px', border: '1px solid #dadce0', borderRadius: 4 }}>
                 <option value="USER">USER</option>
                 <option value="ADMIN">ADMIN</option>
               </select>
@@ -241,8 +241,8 @@ export default function UserManagementPage() {
             <input type="email" value={editForm.email} onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))} placeholder="メールアドレス" style={inputStyle} />
             <input type="text" value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} placeholder="名前" style={inputStyle} />
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 14 }}>ロール: </label>
-              <select value={editForm.role} onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value as 'USER' | 'ADMIN' }))} style={{ padding: '8px 12px', border: '1px solid #dadce0', borderRadius: 4 }}>
+              <label htmlFor="editRole" style={{ fontSize: 14 }}>ロール: </label>
+              <select id="editRole" value={editForm.role} onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value as 'USER' | 'ADMIN' }))} style={{ padding: '8px 12px', border: '1px solid #dadce0', borderRadius: 4 }}>
                 <option value="USER">USER</option>
                 <option value="ADMIN">ADMIN</option>
               </select>

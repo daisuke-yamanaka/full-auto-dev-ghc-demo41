@@ -14,5 +14,6 @@ class LibraryApplicationTests {
 
     @Test
     void contextLoads() {
+        // no-op
     }
 }

@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReservationService {
 
+    private static final String USER_NOT_FOUND = "User not found";
+
     private final ReservationDao reservationDao;
     private final BookDao bookDao;
     private final UserDao userDao;
@@ -28,13 +30,13 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public MyReservationsResponse getMyReservations(String userId, int page, int size) {
         User user = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
 
         int offset = (page - 1) * size;
         List<Reservation> reservations = reservationDao.findByUserId(user.getId(), size, offset);
         int total = reservationDao.countByUserId(user.getId());
 
-        List<Long> bookIds = reservations.stream().map(Reservation::getBookId).distinct().collect(Collectors.toList());
+        List<Long> bookIds = reservations.stream().map(Reservation::getBookId).distinct().toList();
         Map<Long, Book> bookMap = bookIds.isEmpty() ? Collections.emptyMap() :
             bookDao.findByIds(bookIds).stream().collect(Collectors.toMap(Book::getId, b -> b));
 
@@ -42,7 +44,7 @@ public class ReservationService {
             Book book = bookMap.get(r.getBookId());
             int queuePos = reservationDao.getQueuePosition(r.getBookId(), r.getId());
             return toReservationItem(r, book, queuePos);
-        }).collect(Collectors.toList());
+        }).toList();
 
         MyReservationsResponse response = new MyReservationsResponse();
         response.setReservations(items);
@@ -55,7 +57,7 @@ public class ReservationService {
     @Transactional
     public ReservationResponse createReservation(String userId, CreateReservationRequest request) {
         User user = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
         Book book = bookDao.findById(request.getBookId())
             .orElseThrow(() -> new ResourceNotFoundException("Book not found: " + request.getBookId()));
 
@@ -110,7 +112,7 @@ public class ReservationService {
             .orElseThrow(() -> new ResourceNotFoundException("Reservation not found: " + reservationId));
 
         User user = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
 
         if (!reservation.getUserId().equals(user.getId()) && !"ADMIN".equals(user.getRole())) {
             throw new UnauthorizedOperationException("この予約をキャンセルする権限がありません");

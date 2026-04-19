@@ -13,7 +13,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
@@ -61,7 +60,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         List<String> details = ex.getBindingResult().getFieldErrors().stream()
             .map(FieldError::getDefaultMessage)
-            .collect(Collectors.toList());
+            .toList();
         String message = String.join(", ", details);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(new ErrorResponse("VALIDATION_ERROR", "入力内容に誤りがあります", details));

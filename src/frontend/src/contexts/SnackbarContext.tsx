@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react';
 
 type SnackbarSeverity = 'success' | 'error' | 'info';
 
@@ -23,16 +23,20 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
     open: false,
   });
 
-  const showSnackbar = (message: string, severity: SnackbarSeverity = 'info') => {
+  const showSnackbar = useCallback((message: string, severity: SnackbarSeverity = 'info') => {
     setSnackbar({ message, severity, open: true });
-  };
+  }, []);
 
-  const closeSnackbar = () => {
+  const closeSnackbar = useCallback(() => {
     setSnackbar((prev) => ({ ...prev, open: false }));
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    snackbar, showSnackbar, closeSnackbar,
+  }), [snackbar, showSnackbar, closeSnackbar]);
 
   return (
-    <SnackbarContext.Provider value={{ snackbar, showSnackbar, closeSnackbar }}>
+    <SnackbarContext.Provider value={contextValue}>
       {children}
     </SnackbarContext.Provider>
   );

@@ -123,7 +123,14 @@ export default function DashboardPage() {
                 {activeLoans.map((loan) => {
                   const overdue = loan.isOverdue;
                   const dueSoon = !overdue && isDueSoon(loan.dueDate);
-                  const dueDateColor = overdue ? '#d93025' : dueSoon ? '#f29900' : '#202124';
+                  let dueDateColor: string;
+                  if (overdue) {
+                    dueDateColor = '#d93025';
+                  } else if (dueSoon) {
+                    dueDateColor = '#f29900';
+                  } else {
+                    dueDateColor = '#202124';
+                  }
                   return (
                     <div key={loan.loanId} style={{
                       backgroundColor: '#fff', borderRadius: 8,

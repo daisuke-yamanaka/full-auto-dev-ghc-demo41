@@ -1,0 +1,26 @@
+# SonarScanner 診断ログ (Java/Backend)
+# 実行日時: 2026-04-19 21:36:28
+# 対象フォルダ: C:\work\full-auto-dev\ghc\ghc-demo41\repo\src\backend
+# プロジェクトキー: ghc-demo41-backend
+# SonarQube URL: http://192.168.1.56:9000
+# ================================================================
+
+INFO: Scanner configuration file: C:\Users\COSMOROOT\AppData\Local\npm-cache\_npx\4c634e31006915c7\node_modules\sonar-scanner\bin\..\conf\sonar-scanner.properties
+INFO: Project root configuration file: NONE
+INFO: SonarQube Scanner 3.1.0.1141
+INFO: Java 21.0.2 Eclipse Adoptium (64-bit)
+INFO: Windows 11 10.0 amd64
+INFO: User cache: C:\Users\COSMOROOT\.sonar\cache
+ERROR: SonarQube server [http://192.168.1.56:9000] can not be reached
+INFO: ------------------------------------------------------------------------
+INFO: EXECUTION FAILURE
+INFO: ------------------------------------------------------------------------
+INFO: Total time: 6.280s
+ERROR: Error during SonarQube Scanner execution
+INFO: Final Memory: 4M/68M
+INFO: ------------------------------------------------------------------------
+ERROR: Unable to execute SonarQube
+ERROR: Caused by: Fail to get bootstrap index from server
+ERROR: Caused by: Connect timed out
+ERROR: 
+ERROR: Re-run SonarQube Scanner using the -X switch to enable full debug logging.

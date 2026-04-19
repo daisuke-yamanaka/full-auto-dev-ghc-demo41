@@ -271,13 +271,16 @@ export default function BookDetailPage() {
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: isAdmin ? 20 : 0 }}>
               {book.currentUserStatus === 'none' && book.availableCopies > 0 && (() => {
                 const overdue = userLoans?.isOverdue ?? false;
-                const atLimit = userLoans != null && userLoans.remainingLoanCount === 0;
+                const atLimit = userLoans?.remainingLoanCount === 0;
                 const disabled = actionLoading || overdue || atLimit;
-                const title = overdue
-                  ? '延滞中の図書があります。返却してください。'
-                  : atLimit
-                    ? `貸出上限（${userLoans?.currentLoanCount}冊）に達しています`
-                    : `貸出期間: ${LOAN_PERIOD_DAYS}日`;
+                let title: string;
+                if (overdue) {
+                  title = '延滞中の図書があります。返却してください。';
+                } else if (atLimit) {
+                  title = `貸出上限（${userLoans?.currentLoanCount}冊）に達しています`;
+                } else {
+                  title = `貸出期間: ${LOAN_PERIOD_DAYS}日`;
+                }
                 return (
                   <button onClick={handleLoan} disabled={disabled}
                     title={title}

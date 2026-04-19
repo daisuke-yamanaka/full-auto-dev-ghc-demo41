@@ -38,14 +38,14 @@ public class LoanService {
         int activeCount = loanDao.countActiveByUserId(user.getId());
         boolean isOverdue = loanDao.countOverdueByUserId(user.getId()) > 0;
 
-        List<Long> bookIds = loans.stream().map(Loan::getBookId).distinct().collect(Collectors.toList());
+        List<Long> bookIds = loans.stream().map(Loan::getBookId).distinct().toList();
         Map<Long, Book> bookMap = bookIds.isEmpty() ? Collections.emptyMap() :
             bookDao.findByIds(bookIds).stream().collect(Collectors.toMap(Book::getId, b -> b));
 
         List<LoanItem> items = loans.stream().map(loan -> {
             Book book = bookMap.get(loan.getBookId());
             return toLoanItem(loan, book);
-        }).collect(Collectors.toList());
+        }).toList();
 
         MyLoansResponse response = new MyLoansResponse();
         response.setCurrentLoanCount(activeCount);

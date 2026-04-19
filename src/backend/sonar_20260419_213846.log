@@ -1,0 +1,94 @@
+INFO: Scanner configuration file: C:\Users\COSMOROOT\AppData\Local\npm-cache\_npx\4c634e31006915c7\node_modules\sonar-scanner\bin\..\conf\sonar-scanner.properties
+INFO: Project root configuration file: NONE
+INFO: SonarQube Scanner 3.1.0.1141
+INFO: Java 21.0.2 Eclipse Adoptium (64-bit)
+INFO: Windows 11 10.0 amd64
+INFO: User cache: C:\Users\COSMOROOT\.sonar\cache
+INFO: SonarQube server 25.6.0.109173
+INFO: Default locale: "ja_JP", source code encoding: "UTF-8" (analysis is platform dependent)
+INFO: Load global settings
+INFO: Load global settings (done) | time=372ms
+INFO: Server id: 147B411E-AZc7GuFaQvvfcIYlCIuV
+INFO: Loading required plugins
+INFO: Load plugins index
+INFO: Load plugins index (done) | time=276ms
+INFO: Load/download plugins
+INFO: Load/download plugins (done) | time=1864ms
+INFO: Process project properties
+INFO: Process project properties (done) | time=82ms
+INFO: Project key: ghc-demo41-backend
+INFO: Base dir: C:\work\full-auto-dev\ghc\ghc-demo41\repo\src\backend
+INFO: Working dir: C:\work\full-auto-dev\ghc\ghc-demo41\repo\src\backend\.scannerwork
+INFO: Load project settings for component key: 'ghc-demo41-backend'
+INFO: Load quality profiles
+INFO: Load quality profiles (done) | time=207ms
+INFO: Load active rules
+INFO: Load active rules (done) | time=1207ms
+INFO: Load analysis cache
+INFO: Load analysis cache (404) | time=41ms
+INFO: Preprocessing files...
+INFO: 1 language detected in 83 preprocessed files (done) | time=2492ms
+INFO: 0 files ignored because of scm ignore settings
+INFO: Loading plugins for detected languages
+INFO: Load/download plugins
+INFO: Load/download plugins (done) | time=1415ms
+INFO: Load project repositories
+INFO: Load project repositories (done) | time=39ms
+INFO: Indexing files...
+INFO: Project configuration:
+INFO: 83 files indexed (done) | time=148ms
+INFO: Quality profile for java: Sonar way
+INFO: ------------- Run sensors on module GHC Demo41 Backend
+INFO: Load metrics repository
+INFO: Load metrics repository (done) | time=236ms
+INFO: Sensor JavaSensor [java]
+INFO: Server-side caching is enabled. The Java analyzer will not try to leverage data from a previous analysis.
+INFO: Using ECJ batch to parse 72 Main java source files with batch size 427 KB.
+INFO: Starting batch processing.
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed
+INFO: 0% analyzed

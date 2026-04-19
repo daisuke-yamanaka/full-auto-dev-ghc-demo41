@@ -8,6 +8,7 @@ import com.example.library.domain.Loan;
 import com.example.library.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,6 +32,14 @@ public class DataInitializer implements CommandLineRunner {
     private final LoanDao loanDao;
     private final BCryptPasswordEncoder passwordEncoder;
 
+    @Value("${app.init.admin-password:admin123}")
+    private String adminPassword;
+
+    @Value("${app.init.user-password-prefix:password}")
+    private String userPasswordPrefix;
+
+    private static final String CATEGORY_PROGRAMMING = "プログラミング";
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -41,7 +50,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // 管理者ユーザ
         User admin = createUser("admin", "admin@example.com", "管理者", "ADMIN",
-            passwordEncoder.encode("admin123"));
+            passwordEncoder.encode(adminPassword));
         userDao.insert(admin);
 
         // 一般ユーザ5名
@@ -52,16 +61,16 @@ public class DataInitializer implements CommandLineRunner {
                 "user" + String.format("%03d", i) + "@example.com",
                 "ユーザ" + i,
                 "USER",
-                passwordEncoder.encode("password" + i));
+                passwordEncoder.encode(userPasswordPrefix + i));
             userDao.insert(regularUsers[i - 1]);
         }
 
         // 図書10冊以上
         String[][] bookData = {
-            {"Java入門", "山田太郎", "9784123456789", "技術出版社", "2020", "プログラミング", "3"},
-            {"Spring Boot実践", "田中花子", "9784234567890", "Java書房", "2021", "プログラミング", "2"},
+            {"Java入門", "山田太郎", "9784123456789", "技術出版社", "2020", CATEGORY_PROGRAMMING, "3"},
+            {"Spring Boot実践", "田中花子", "9784234567890", "Java書房", "2021", CATEGORY_PROGRAMMING, "2"},
             {"データベース設計", "鈴木一郎", "9784345678901", "DB出版", "2019", "データベース", "1"},
-            {"アルゴリズムとデータ構造", "佐藤次郎", "9784456789012", "CS出版", "2022", "プログラミング", "2"},
+            {"アルゴリズムとデータ構造", "佐藤次郎", "9784456789012", "CS出版", "2022", CATEGORY_PROGRAMMING, "2"},
             {"Webアプリケーション開発", "伊藤三郎", "9784567890123", "Web書房", "2021", "Web開発", "3"},
             {"機械学習入門", "渡辺四郎", "9784678901234", "AI出版", "2022", "AI/ML", "2"},
             {"クリーンアーキテクチャ", "中村五郎", "9784789012345", "設計書房", "2020", "ソフトウェア設計", "1"},

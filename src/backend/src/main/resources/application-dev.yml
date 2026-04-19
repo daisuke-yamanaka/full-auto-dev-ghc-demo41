@@ -17,6 +17,11 @@ jwt:
   # ⚠️ 開発用シークレット。本番環境では必ず環境変数 JWT_SECRET で上書きすること
   secret: dev-secret-key-not-for-production-use-only-32chars
 
+app:
+  init:
+    admin-password: admin123
+    user-password-prefix: password
+
 logging:
   level:
     com.example.library: DEBUG

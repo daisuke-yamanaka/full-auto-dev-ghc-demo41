@@ -12,12 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class UserService {
+
+    private static final String USER_NOT_FOUND = "User not found";
+    private static final String USER_NOT_FOUND_ID = "User not found: ";
 
     private final UserDao userDao;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -25,14 +27,14 @@ public class UserService {
     @Transactional(readOnly = true)
     public ProfileResponse getProfile(String userId) {
         User user = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
         return toProfileResponse(user);
     }
 
     @Transactional
     public ProfileResponse updateProfile(String userId, UpdateProfileRequest request) {
         User user = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
 
         if (!user.getVersion().equals(request.getVersion())) {
             throw new OptimisticLockException("プロフィール情報が更新されています。再読み込みしてください。");
@@ -44,13 +46,13 @@ public class UserService {
 
         log.info("プロフィール更新: userId={}, operator={}", userId, userId);
         return toProfileResponse(userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found")));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND)));
     }
 
     @Transactional
     public void changePassword(String userId, ChangePasswordRequest request) {
         User user = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
             throw new BadCredentialsException("現在のパスワードが正しくありません");
@@ -69,7 +71,7 @@ public class UserService {
     @Transactional
     public SettingsResponse updateSettings(String userId, UpdateSettingsRequest request) {
         User user = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
 
         if (!user.getVersion().equals(request.getVersion())) {
             throw new OptimisticLockException("設定情報が更新されています。再読み込みしてください。");
@@ -81,7 +83,7 @@ public class UserService {
 
         log.info("設定更新: userId={}, fontSize={}", userId, request.getFontSize());
         User updated = userDao.findByUserId(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
         return new SettingsResponse(updated.getId(), updated.getFontSize(), updated.getVersion());
     }
 
@@ -91,7 +93,7 @@ public class UserService {
         List<User> users = userDao.findAll(size, offset);
         int total = userDao.countAll();
 
-        List<UserSummary> summaries = users.stream().map(this::toUserSummary).collect(Collectors.toList());
+        List<UserSummary> summaries = users.stream().map(this::toUserSummary).toList();
 
         UsersResponse response = new UsersResponse();
         response.setUsers(summaries);
@@ -130,7 +132,7 @@ public class UserService {
     @Transactional
     public AdminUserResponse updateUser(Long id, UpdateUserRequest request) {
         User user = userDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_ID + id));
 
         if (!user.getVersion().equals(request.getVersion())) {
             throw new OptimisticLockException("ユーザ情報が更新されています。再読み込みしてください。");
@@ -153,13 +155,13 @@ public class UserService {
         String operator = getOperatorId();
         log.info("ユーザ更新: id={}, operator={}", id, operator);
         return toAdminUserResponse(userDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id)));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_ID + id)));
     }
 
     @Transactional
     public void deleteUser(Long id, Long version) {
         User user = userDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_ID + id));
 
         if (!user.getVersion().equals(version)) {
             throw new OptimisticLockException("ユーザ情報が更新されています。再読み込みしてください。");
@@ -173,7 +175,7 @@ public class UserService {
     @Transactional
     public void resetPassword(Long id, String newPassword) {
         User user = userDao.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_ID + id));
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setUpdatedAt(LocalDateTime.now());

@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +45,7 @@ public class ActivityService {
                 item.setUserName(user.getName());
             });
             return item;
-        }).collect(Collectors.toList());
+        }).toList();
 
         OperationLogsResponse response = new OperationLogsResponse();
         response.setLogs(items);
@@ -78,7 +77,7 @@ public class ActivityService {
 
             item.setDatetime(opLog.getCreatedAt());
             return item;
-        }).collect(Collectors.toList());
+        }).toList();
 
         ActivitiesResponse response = new ActivitiesResponse();
         response.setActivities(activities);

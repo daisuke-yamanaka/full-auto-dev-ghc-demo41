@@ -100,8 +100,8 @@ export default function ProfilePage() {
 
             {/* Name */}
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>名前 <span style={{ color: '#d93025' }}>*</span></label>
-              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setNameError(''); }}
+              <label htmlFor="profileName" style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500 }}>名前 <span style={{ color: '#d93025' }}>*</span></label>
+              <input id="profileName" type="text" value={name} onChange={(e) => { setName(e.target.value); setNameError(''); }}
                 disabled={saving}
                 style={{
                   width: '100%', padding: '10px 14px', boxSizing: 'border-box',
@@ -113,23 +113,23 @@ export default function ProfilePage() {
 
             {/* User ID - readonly */}
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#5f6368' }}>ユーザID</label>
-              <input type="text" value={profile.userId} readOnly
+              <label htmlFor="profileUserId" style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#5f6368' }}>ユーザID</label>
+              <input id="profileUserId" type="text" value={profile.userId} readOnly
                 style={{ width: '100%', padding: '10px 14px', boxSizing: 'border-box', border: '1px solid #e0e0e0', borderRadius: 4, fontSize: 14, backgroundColor: '#f5f5f5', color: '#5f6368' }}
               />
             </div>
 
             {/* Email - readonly */}
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#5f6368' }}>メールアドレス</label>
-              <input type="email" value={profile.email} readOnly
+              <label htmlFor="profileEmail" style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: '#5f6368' }}>メールアドレス</label>
+              <input id="profileEmail" type="email" value={profile.email} readOnly
                 style={{ width: '100%', padding: '10px 14px', boxSizing: 'border-box', border: '1px solid #e0e0e0', borderRadius: 4, fontSize: 14, backgroundColor: '#f5f5f5', color: '#5f6368' }}
               />
             </div>
 
             {/* Font size */}
             <div style={{ marginBottom: 28 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500 }}>フォントサイズ</label>
+              <div style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500 }}>フォントサイズ</div>
               <div style={{ display: 'flex', gap: 12 }}>
                 {FONT_SIZE_OPTIONS.map(({ value, label }) => (
                   <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14 }}>
