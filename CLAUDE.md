@@ -64,7 +64,7 @@
 | 実装（バックエンド） | 完了 | `feature/implementation-backend` | PR #5（マージ済み） | 全23エンドポイント実装済み |
 | 実装（フロントエンド） | 完了 | `feature/implementation-frontend` | PR #6（マージ済み） | 全15画面実装済み |
 | 単体テスト | 完了 | `feature/unit-test` | PR #7（マージ済み） | BE:83件/FE:148件 全PASS、カバレッジ全閾値クリア |
-| E2Eテスト | 未実施 | `feature/e2e-test` |  |  |
+| E2Eテスト | 完了 | `feature/system-test` | PR #8（マージ済み） | 56テスト全PASS・FR-001〜FR-031全件カバー |
 
 ## 採用モックデザイン方針（基本設計以降に反映すること）
 
