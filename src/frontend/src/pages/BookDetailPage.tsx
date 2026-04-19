@@ -55,7 +55,37 @@ export default function BookDetailPage() {
     }
   };
 
-  useEffect(() => { fetchBook(); }, [bookId]);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [bookRes, loansRes] = await Promise.all([
+          getBook(bookId),
+          !isAdmin ? getMyLoans(1, 1) : Promise.resolve(null),
+        ]);
+        if (!cancelled) {
+          setBook(bookRes);
+          setUserLoans(loansRes);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const axiosErr = err as AxiosError<ErrorResponse>;
+          if (axiosErr.response?.status === 404) {
+            setError('404');
+          } else {
+            console.error('[BookDetail] fetch error', err);
+            setError('図書の読み込みに失敗しました。');
+          }
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [bookId]);
 
   const handleLoan = async () => {
     if (!book) return;

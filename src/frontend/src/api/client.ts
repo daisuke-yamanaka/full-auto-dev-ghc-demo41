@@ -22,6 +22,10 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    } else if (error.response && error.response.status >= 500) {
+      console.error('[api] Server error', error.response.status, error.response.data);
+    } else if (!error.response) {
+      console.error('[api] Network error or timeout', error.message);
     }
     return Promise.reject(error);
   }
