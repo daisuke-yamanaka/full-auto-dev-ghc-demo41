@@ -126,7 +126,7 @@ export default function BookDetailPage() {
   };
 
   const handleReturn = async () => {
-    if (!book || book.currentUserLoanId == null || book.currentUserLoanVersion == null) return;
+    if (book?.currentUserLoanId == null || book?.currentUserLoanVersion == null) return;
     setActionLoading(true);
     try {
       await returnLoan(book.currentUserLoanId, { version: book.currentUserLoanVersion });
@@ -148,7 +148,7 @@ export default function BookDetailPage() {
   };
 
   const handleCancelReservation = async () => {
-    if (!book || book.currentUserReservationId == null || book.currentUserReservationVersion == null) return;
+    if (book?.currentUserReservationId == null || book?.currentUserReservationVersion == null) return;
     setActionLoading(true);
     try {
       await cancelReservation(book.currentUserReservationId, { version: book.currentUserReservationVersion });

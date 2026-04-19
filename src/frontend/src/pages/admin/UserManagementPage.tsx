@@ -10,6 +10,10 @@ import type { UserSummary, CreateUserRequest, UpdateUserRequest, UsersResponse }
 import type { AxiosError } from 'axios';
 import type { ErrorResponse } from '../../types';
 
+const FIELD_PLACEHOLDERS: Record<string, string> = {
+  userId: 'ユーザID', email: 'メールアドレス', name: '名前', password: 'パスワード（8文字以上）',
+};
+
 type DialogMode = 'none' | 'create' | 'edit' | 'delete' | 'resetPw';
 
 export default function UserManagementPage() {
@@ -211,7 +215,7 @@ export default function UserManagementPage() {
             <h3 style={{ marginBottom: 20 }}>ユーザ登録</h3>
             {dialogError && <div style={{ color: '#d93025', fontSize: 13, marginBottom: 12 }}>{dialogError}</div>}
             {(['userId', 'email', 'name', 'password'] as const).map((k) => (
-              <input key={k} type={k === 'password' ? 'password' : 'text'} placeholder={k === 'userId' ? 'ユーザID' : k === 'email' ? 'メールアドレス' : k === 'name' ? '名前' : 'パスワード（8文字以上）'}
+              <input key={k} type={k === 'password' ? 'password' : 'text'} placeholder={FIELD_PLACEHOLDERS[k]}
                 value={form[k] as string} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} style={inputStyle} />
             ))}
             <div style={{ marginBottom: 12 }}>

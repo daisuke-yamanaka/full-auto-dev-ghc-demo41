@@ -43,15 +43,15 @@ export default function Drawer({ open, pinned, onClose, onTogglePin }: DrawerPro
     <>
       {/* Overlay for non-pinned mobile */}
       {open && !pinned && (
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           aria-label="メニューを閉じる"
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClose(); }}
-          onClick={onClose} style={{
+          onClick={onClose}
+          style={{
             position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)',
-            zIndex: 800, top: 56,
-          }} />
+            zIndex: 800, top: 56, border: 'none', cursor: 'default', padding: 0,
+          }}
+        />
       )}
       <nav style={{
         position: 'fixed', top: 56, left: 0, width: drawerWidth, bottom: 0,

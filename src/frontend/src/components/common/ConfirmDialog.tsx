@@ -16,20 +16,27 @@ export default function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label="ダイアログを閉じる"
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onCancel(); }}
-      style={{
-        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
-      }} onClick={onCancel}>
-      <div style={{
-        backgroundColor: '#fff', borderRadius: 8, padding: 32, maxWidth: 480, width: '90%',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-      }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 18, color: '#202124' }}>{title}</h3>
+    <>
+      <button
+        type="button"
+        aria-label="ダイアログを閉じる"
+        onClick={onCancel}
+        style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+          border: 'none', zIndex: 2000, cursor: 'default', padding: 0,
+        }}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          backgroundColor: '#fff', borderRadius: 8, padding: 32, maxWidth: 480, width: '90%',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 2001,
+        }}
+      >
+        <h3 id="confirm-dialog-title" style={{ margin: '0 0 16px', fontSize: 18, color: '#202124' }}>{title}</h3>
         <p style={{ margin: '0 0 24px', color: '#5f6368', lineHeight: 1.6 }}>{message}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
           <button onClick={onCancel} style={{
@@ -42,6 +49,6 @@ export default function ConfirmDialog({
           }}>{confirmLabel}</button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

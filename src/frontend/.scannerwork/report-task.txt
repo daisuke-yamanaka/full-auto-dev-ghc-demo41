@@ -2,5 +2,5 @@ projectKey=ghc-demo41-frontend
 serverUrl=http://192.168.1.56:9000
 serverVersion=25.6.0.109173
 dashboardUrl=http://192.168.1.56:9000/dashboard?id=ghc-demo41-frontend
-ceTaskId=2f169dae-dd38-4873-a441-186ae5fe5b16
-ceTaskUrl=http://192.168.1.56:9000/api/ce/task?id=2f169dae-dd38-4873-a441-186ae5fe5b16
+ceTaskId=85f0dcad-c368-4efc-b6d5-dd70bc66593c
+ceTaskUrl=http://192.168.1.56:9000/api/ce/task?id=85f0dcad-c368-4efc-b6d5-dd70bc66593c
