@@ -63,8 +63,10 @@
 | 設計 | 完了 | `feature/design` | PR #4（マージ済み） |  |
 | 実装（バックエンド） | 完了 | `feature/implementation-backend` | PR #5（マージ済み） | 全23エンドポイント実装済み |
 | 実装（フロントエンド） | 完了 | `feature/implementation-frontend` | PR #6（マージ済み） | 全15画面実装済み |
-| 単体テスト | 完了 | `feature/unit-test` | PR #7（マージ済み） | BE:83件/FE:148件 全PASS、カバレッジ全閾値クリア |
+| 単体テスト | 完了 | `feature/unit-test` | PR #7（マージ済み） | BE:84件/FE:148件 全PASS、カバレッジ全閾値クリア |
 | E2Eテスト | 完了 | `feature/system-test` | PR #8（マージ済み） | 56テスト全PASS・FR-001〜FR-031全件カバー |
+| SonarQube品質診断 | 完了 | `develop` | — | BLOCKER/CRITICAL/MAJOR全件修正・QG PASSED |
+| リリース | 完了 | `main` | PR #9（マージ済み） | develop → main マージ完了 |
 
 ## 採用モックデザイン方針（基本設計以降に反映すること）
 
