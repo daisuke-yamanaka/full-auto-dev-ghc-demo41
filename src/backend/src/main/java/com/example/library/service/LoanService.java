@@ -85,7 +85,7 @@ public class LoanService {
         loan.setVersion(0L);
         loan.setCreatedAt(LocalDateTime.now());
         loan.setUpdatedAt(LocalDateTime.now());
-        var loanResult = loanDao.insert(loan);
+        loanDao.insert(loan);
 
         OperationLog opLog = new OperationLog();
         opLog.setUserId(user.getId());

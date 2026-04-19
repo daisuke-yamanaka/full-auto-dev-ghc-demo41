@@ -31,20 +31,20 @@ public class ActivityService {
 
         List<OperationLog> logs = operationLogDao.findRecentByUserId(user.getId(), 20);
 
-        List<ActivityItem> activities = logs.stream().map(log -> {
+        List<ActivityItem> activities = logs.stream().map(opLog -> {
             ActivityItem item = new ActivityItem();
-            item.setId(log.getId());
-            item.setType(mapOperationType(log.getOperationType()));
+            item.setId(opLog.getId());
+            item.setType(mapOperationType(opLog.getOperationType()));
 
-            if ("BOOK".equals(log.getTargetType()) && log.getTargetId() != null) {
+            if ("BOOK".equals(opLog.getTargetType()) && opLog.getTargetId() != null) {
                 try {
-                    Long bookId = Long.parseLong(log.getTargetId());
+                    Long bookId = Long.parseLong(opLog.getTargetId());
                     item.setBookId(bookId);
                     bookDao.findById(bookId).ifPresent(book -> item.setBookTitle(book.getTitle()));
                 } catch (NumberFormatException ignored) {}
             }
 
-            item.setDatetime(log.getCreatedAt());
+            item.setDatetime(opLog.getCreatedAt());
             return item;
         }).collect(Collectors.toList());
 
