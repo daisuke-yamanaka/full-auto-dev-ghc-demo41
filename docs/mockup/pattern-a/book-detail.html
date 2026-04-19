@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>図書詳細 - LibraryMS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #0078d4; --primary-dark: #005a9e; --primary-light: #deecf9;
+      --sidebar-bg: #f3f2f1; --sidebar-width: 240px; --sidebar-mini: 60px;
+      --header-height: 56px; --text-primary: #323130; --text-secondary: #605e5c;
+      --border-color: #edebe9; --success: #107c10; --warning: #d83b01;
+      --danger: #a4262c; --white: #ffffff;
+    }
+    body { font-family: 'Segoe UI','Meiryo',sans-serif; background: #faf9f8; color: var(--text-primary); min-height: 100vh; }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--primary); color: var(--white); display: flex; align-items: center; padding: 0 16px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.15); gap: 8px; }
+    .hamburger-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 20px; padding: 8px; border-radius: 4px; line-height: 1; display: none; }
+    .app-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--white); font-size: 18px; font-weight: 700; }
+    .header-spacer { flex: 1; }
+    .font-size-controls { display: flex; align-items: center; gap: 4px; }
+    .font-size-controls span { font-size: 12px; opacity: 0.85; margin-right: 4px; }
+    .font-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: var(--white); cursor: pointer; border-radius: 3px; padding: 3px 8px; font-size: 11px; font-weight: 600; }
+    .font-btn.active { background: rgba(255,255,255,0.30); }
+    .header-icon-btn { position: relative; background: none; border: none; color: var(--white); cursor: pointer; font-size: 18px; padding: 8px; border-radius: 4px; }
+    .header-icon-btn:hover { background: rgba(255,255,255,0.15); }
+    .notif-badge { position: absolute; top: 4px; right: 4px; background: #d83b01; color: #fff; font-size: 10px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+    .user-menu-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--white); cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .dropdown { position: relative; }
+    .dropdown-menu { position: absolute; top: calc(100% + 4px); right: 0; background: var(--white); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 180px; z-index: 2000; display: none; }
+    .dropdown-menu.open { display: block; }
+    .dropdown-menu a { display: block; padding: 10px 16px; color: var(--text-primary); text-decoration: none; font-size: 13px; }
+    .dropdown-menu a:hover { background: var(--primary-light); }
+    .dropdown-divider { border: none; border-top: 1px solid var(--border-color); margin: 4px 0; }
+    .notif-dropdown { min-width: 300px; }
+    .notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 13px; }
+    .notif-item { padding: 10px 16px; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+    .notif-item.unread { background: var(--primary-light); }
+    .notif-time { color: var(--text-secondary); font-size: 11px; }
+    .sidebar { position: fixed; top: var(--header-height); left: 0; bottom: 0; width: var(--sidebar-width); background: var(--sidebar-bg); border-right: 1px solid var(--border-color); overflow-y: auto; overflow-x: hidden; transition: width 0.2s, transform 0.2s; z-index: 900; }
+    .sidebar-nav { padding: 8px 0; }
+    .nav-section-title { font-size: 11px; font-weight: 600; color: var(--text-secondary); padding: 16px 16px 4px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; font-size: 13px; font-weight: 500; transition: background 0.15s; white-space: nowrap; }
+    .nav-item:hover { background: #e8e6e4; }
+    .nav-item[aria-current="page"] { background: var(--primary-light); color: var(--primary); border-left: 3px solid var(--primary); }
+    .nav-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+    .nav-divider { border: none; border-top: 1px solid var(--border-color); margin: 8px 0; }
+    .nav-admin-label { font-size: 11px; color: var(--text-secondary); padding: 8px 16px 4px; display: flex; align-items: center; gap: 6px; }
+    .nav-admin-label::before, .nav-admin-label::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+    .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 850; }
+    .overlay.open { display: block; }
+    /* Breadcrumb */
+    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+    .breadcrumb a { color: var(--primary); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    /* Book detail layout */
+    .book-detail-layout { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
+    .book-cover-large { background: linear-gradient(135deg, #deecf9, #bdd7f5); border-radius: 8px; height: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .book-cover-large .cover-icon { font-size: 80px; }
+    .book-cover-large .cover-isbn { font-size: 11px; color: var(--text-secondary); font-family: monospace; }
+    .book-info-panel { display: flex; flex-direction: column; gap: 20px; }
+    .book-title-section { }
+    .book-main-title { font-size: 26px; font-weight: 700; color: var(--text-primary); line-height: 1.3; margin-bottom: 6px; }
+    .book-main-author { font-size: 16px; color: var(--text-secondary); margin-bottom: 10px; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: #dff6dd; color: var(--success); }
+    .badge-warning { background: #fff4ce; color: #7d6608; }
+    .badge-danger { background: #fde7e9; color: var(--danger); }
+    .badge-info { background: var(--primary-light); color: var(--primary); }
+    .badge-gray { background: #f3f2f1; color: var(--text-secondary); }
+    /* Metadata table */
+    .meta-table { width: 100%; border-collapse: collapse; }
+    .meta-table th, .meta-table td { padding: 8px 0; vertical-align: top; font-size: 13px; border-bottom: 1px solid var(--border-color); }
+    .meta-table th { width: 120px; color: var(--text-secondary); font-weight: 600; padding-right: 16px; }
+    .meta-table tr:last-child th, .meta-table tr:last-child td { border-bottom: none; }
+    /* Stock info */
+    .stock-card { background: var(--white); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .stock-card h3 { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px; }
+    .stock-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .stock-item { text-align: center; }
+    .stock-num { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+    .stock-num.primary { color: var(--primary); }
+    .stock-num.warning { color: var(--warning); }
+    .stock-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    /* Action buttons */
+    .action-area { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn { height: 40px; padding: 0 20px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary { background: var(--primary); color: var(--white); border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { background: var(--white); color: var(--primary); border-color: var(--primary); }
+    .btn-outline:hover { background: var(--primary-light); }
+    .btn-danger-outline { background: var(--white); color: var(--danger); border-color: var(--danger); }
+    .btn-danger-outline:hover { background: #fde7e9; }
+    /* Description */
+    .desc-text { font-size: 14px; line-height: 1.7; color: var(--text-primary); }
+    /* Admin section */
+    .admin-note { font-size: 12px; color: var(--text-secondary); font-style: italic; margin-bottom: 8px; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { background: #f8f7f6; padding: 10px 16px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 12px; border-bottom: 1px solid var(--border-color); }
+    .data-table td { padding: 10px 16px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    /* Section headings */
+    .section-card { background: var(--white); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 20px; }
+    .section-header { padding: 12px 20px; border-bottom: 1px solid var(--border-color); }
+    .section-title { font-size: 14px; font-weight: 700; }
+    .section-body { padding: 16px 20px; }
+    .app-footer { margin-left: var(--sidebar-width); padding: 16px 24px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-color); text-align: center; }
+    @media (max-width: 1023px) and (min-width: 768px) {
+      .sidebar { width: var(--sidebar-mini); }
+      .nav-label, .nav-section-title, .nav-admin-label { display: none; }
+      .nav-item { padding: 12px; justify-content: center; }
+      .nav-icon { width: auto; font-size: 18px; }
+      .main-content { margin-left: var(--sidebar-mini); }
+      .app-footer { margin-left: var(--sidebar-mini); }
+      .book-detail-layout { grid-template-columns: 200px 1fr; }
+    }
+    @media (max-width: 767px) {
+      .hamburger-btn { display: block; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 16px; }
+      .app-footer { margin-left: 0; }
+      .font-size-controls span { display: none; }
+      .book-detail-layout { grid-template-columns: 1fr; }
+      .book-cover-large { height: 240px; }
+      .stock-grid { grid-template-columns: repeat(3,1fr); }
+    }
+    a:focus, button:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<header class="app-header" role="banner">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く" aria-expanded="false">☰</button>
+  <a href="./dashboard.html" class="app-logo"><span>📚</span> LibraryMS</a>
+  <div class="header-spacer"></div>
+  <div class="font-size-controls" role="group" aria-label="文字サイズ切り替え">
+    <span>文字サイズ:</span>
+    <button class="font-btn active" data-size="14">標準</button>
+    <button class="font-btn" data-size="16">大</button>
+    <button class="font-btn" data-size="18">特大</button>
+  </div>
+  <div class="dropdown">
+    <button class="header-icon-btn" id="notifBtn" aria-label="通知（2件）" aria-expanded="false">🔔<span class="notif-badge">2</span></button>
+    <div class="dropdown-menu notif-dropdown" id="notifMenu">
+      <div class="notif-header">通知</div>
+      <div class="notif-item unread"><div>「Clean Code」の返却期限を過ぎています</div><div class="notif-time">2024/06/01</div></div>
+      <div class="notif-item unread"><div>「Clean Architecture」が利用可能になりました</div><div class="notif-time">2024/06/05</div></div>
+    </div>
+  </div>
+  <div class="dropdown">
+    <button class="user-menu-btn" id="userMenuBtn" aria-expanded="false"><div class="user-avatar">山</div>山田 太郎 ▾</button>
+    <div class="dropdown-menu" id="userMenu">
+      <a href="./profile.html">👤 プロフィール</a><a href="./password.html">🔑 パスワード変更</a>
+      <hr class="dropdown-divider"><a href="./login.html">🚪 ログアウト</a>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="メインナビゲーション">
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">メニュー</div>
+    <a href="./dashboard.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">ダッシュボード</span></a>
+    <a href="./activity.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">アクティビティ</span></a>
+    <a href="./books.html" class="nav-item" aria-current="page"><span class="nav-icon">📚</span><span class="nav-label">図書一覧・検索</span></a>
+    <a href="./loan-history.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-label">貸出履歴</span></a>
+    <a href="./reservations.html" class="nav-item"><span class="nav-icon">🔖</span><span class="nav-label">予約一覧</span></a>
+    <a href="./profile.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">プロフィール</span></a>
+    <a href="./password.html" class="nav-item"><span class="nav-icon">🔑</span><span class="nav-label">パスワード変更</span></a>
+    <!-- 管理者のみ表示 -->
+    <hr class="nav-divider">
+    <div class="nav-admin-label">管理者のみ</div>
+    <a href="./book-management.html" class="nav-item"><span class="nav-icon">📗</span><span class="nav-label">図書管理</span></a>
+    <a href="./user-management.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">ユーザ管理</span></a>
+  </nav>
+</aside>
+<div class="overlay" id="overlay"></div>
+
+<main class="main-content" role="main">
+  <!-- Breadcrumb -->
+  <nav class="breadcrumb" aria-label="パンくずリスト">
+    <a href="./dashboard.html">🏠 ホーム</a>
+    <span aria-hidden="true">›</span>
+    <a href="./books.html">図書一覧</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">Clean Code</span>
+  </nav>
+
+  <!-- Book detail -->
+  <div class="book-detail-layout">
+    <!-- Cover -->
+    <div>
+      <div class="book-cover-large" aria-hidden="true">
+        <div class="cover-icon">📘</div>
+        <div class="cover-isbn">ISBN: 978-0-13-235088-4</div>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="book-info-panel">
+      <div class="book-title-section">
+        <h1 class="book-main-title">Clean Code: A Handbook of Agile Software Craftsmanship</h1>
+        <p class="book-main-author">Robert C. Martin（著）</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-success">在庫あり</span>
+          <span class="badge badge-info">コンピュータ</span>
+        </div>
+      </div>
+
+      <!-- Stock info -->
+      <div class="stock-card">
+        <h3>在庫状況</h3>
+        <div class="stock-grid">
+          <div class="stock-item">
+            <div class="stock-num primary">3</div>
+            <div class="stock-label">総在庫数</div>
+          </div>
+          <div class="stock-item">
+            <div class="stock-num warning">1</div>
+            <div class="stock-label">貸出中</div>
+          </div>
+          <div class="stock-item">
+            <div class="stock-num">0</div>
+            <div class="stock-label">予約数</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-area">
+        <button class="btn btn-primary">📤 貸し出す</button>
+        <button class="btn btn-outline">🔖 予約する</button>
+        <!-- 管理者のみ表示 -->
+        <a href="./book-form.html" class="btn btn-danger-outline" style="font-size:13px">✏️ 編集（管理者）</a>
+      </div>
+
+      <!-- Metadata -->
+      <div class="section-card">
+        <div class="section-header"><h2 class="section-title">書誌情報</h2></div>
+        <div class="section-body">
+          <table class="meta-table">
+            <tbody>
+              <tr><th>著者</th><td>Robert C. Martin</td></tr>
+              <tr><th>出版社</th><td>Prentice Hall</td></tr>
+              <tr><th>出版年</th><td>2008年</td></tr>
+              <tr><th>ISBN</th><td>978-0-13-235088-4</td></tr>
+              <tr><th>カテゴリ</th><td>コンピュータ / ソフトウェア工学</td></tr>
+              <tr><th>ページ数</th><td>431ページ</td></tr>
+              <tr><th>言語</th><td>英語</td></tr>
+              <tr><th>登録日</th><td>2023/04/01</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="section-card">
+    <div class="section-header"><h2 class="section-title">📝 内容紹介</h2></div>
+    <div class="section-body">
+      <p class="desc-text">
+        『Clean Code』は、ソフトウェアエンジニアとして長く活躍するために必須の「読みやすいコードの書き方」を体系的に解説した名著です。Robert C. Martin（通称「Uncle Bob」）が、実際のコード例を豊富に交えながら、命名規則・関数・コメント・エラー処理・ユニットテストなど、クリーンなコードを書くための原則と実践を丁寧に説明しています。悪いコードのリファクタリング例を通じて、なぜそのコードが読みにくいのか、どう改善すべきかを学べます。プロフェッショナルなソフトウェア開発者を目指すすべての人に強くお勧めの一冊です。
+      </p>
+    </div>
+  </div>
+
+  <!-- Loan history (admin only) -->
+  <div class="section-card">
+    <div class="section-header"><h2 class="section-title">📋 貸出中ユーザ一覧</h2></div>
+    <div class="section-body">
+      <!-- 管理者のみ表示（一般ユーザには非表示） -->
+      <p class="admin-note">※ この情報は管理者のみ閲覧できます</p>
+      <table class="data-table" aria-label="貸出中ユーザ一覧">
+        <thead>
+          <tr><th>ユーザ名</th><th>部署</th><th>貸出日</th><th>返却期限</th><th>状態</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>山田 太郎</td><td>開発部</td><td>2024/05/15</td>
+            <td style="color:var(--danger);font-weight:600">2024/05/29</td>
+            <td><span class="badge badge-danger">延滞中</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="margin-top:8px">
+    <a href="./books.html" style="color:var(--primary);text-decoration:none;font-size:13px">← 図書一覧に戻る</a>
+  </div>
+</main>
+
+<footer class="app-footer" role="contentinfo">© 2024 LibraryMS — 図書管理システム</footer>
+
+<script>
+  const hamburgerBtn=document.getElementById('hamburgerBtn'),sidebar=document.getElementById('sidebar'),overlay=document.getElementById('overlay');
+  function toggleSidebar(){const o=sidebar.classList.toggle('open');overlay.classList.toggle('open',o);hamburgerBtn.setAttribute('aria-expanded',o);}
+  hamburgerBtn.addEventListener('click',toggleSidebar);overlay.addEventListener('click',toggleSidebar);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sidebar.classList.contains('open'))toggleSidebar();});
+  document.querySelectorAll('.font-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.font-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.documentElement.style.fontSize=btn.dataset.size+'px';});});
+  const notifBtn=document.getElementById('notifBtn'),notifMenu=document.getElementById('notifMenu'),userMenuBtn=document.getElementById('userMenuBtn'),userMenu=document.getElementById('userMenu');
+  notifBtn.addEventListener('click',e=>{e.stopPropagation();notifMenu.classList.toggle('open');userMenu.classList.remove('open');});
+  userMenuBtn.addEventListener('click',e=>{e.stopPropagation();userMenu.classList.toggle('open');notifMenu.classList.remove('open');});
+  document.addEventListener('click',()=>{notifMenu.classList.remove('open');userMenu.classList.remove('open');});
+</script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>図書管理 - LibraryMS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #0078d4; --primary-dark: #005a9e; --primary-light: #deecf9;
+      --sidebar-bg: #f3f2f1; --sidebar-width: 240px; --sidebar-mini: 60px;
+      --header-height: 56px; --text-primary: #323130; --text-secondary: #605e5c;
+      --border-color: #edebe9; --success: #107c10; --warning: #d83b01;
+      --danger: #a4262c; --white: #ffffff;
+    }
+    body { font-family: 'Segoe UI','Meiryo',sans-serif; background: #faf9f8; color: var(--text-primary); min-height: 100vh; }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--primary); color: var(--white); display: flex; align-items: center; padding: 0 16px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.15); gap: 8px; }
+    .hamburger-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 20px; padding: 8px; border-radius: 4px; line-height: 1; display: none; }
+    .app-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--white); font-size: 18px; font-weight: 700; }
+    .header-spacer { flex: 1; }
+    .font-size-controls { display: flex; align-items: center; gap: 4px; }
+    .font-size-controls span { font-size: 12px; opacity: 0.85; margin-right: 4px; }
+    .font-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: var(--white); cursor: pointer; border-radius: 3px; padding: 3px 8px; font-size: 11px; font-weight: 600; }
+    .font-btn.active { background: rgba(255,255,255,0.30); }
+    .header-icon-btn { position: relative; background: none; border: none; color: var(--white); cursor: pointer; font-size: 18px; padding: 8px; border-radius: 4px; }
+    .header-icon-btn:hover { background: rgba(255,255,255,0.15); }
+    .notif-badge { position: absolute; top: 4px; right: 4px; background: #d83b01; color: #fff; font-size: 10px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+    .user-menu-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--white); cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .dropdown { position: relative; }
+    .dropdown-menu { position: absolute; top: calc(100% + 4px); right: 0; background: var(--white); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 180px; z-index: 2000; display: none; }
+    .dropdown-menu.open { display: block; }
+    .dropdown-menu a { display: block; padding: 10px 16px; color: var(--text-primary); text-decoration: none; font-size: 13px; }
+    .dropdown-menu a:hover { background: var(--primary-light); }
+    .dropdown-divider { border: none; border-top: 1px solid var(--border-color); margin: 4px 0; }
+    .notif-dropdown { min-width: 300px; }
+    .notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 13px; }
+    .notif-item { padding: 10px 16px; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+    .notif-item.unread { background: var(--primary-light); }
+    .notif-time { color: var(--text-secondary); font-size: 11px; }
+    .sidebar { position: fixed; top: var(--header-height); left: 0; bottom: 0; width: var(--sidebar-width); background: var(--sidebar-bg); border-right: 1px solid var(--border-color); overflow-y: auto; overflow-x: hidden; transition: width 0.2s, transform 0.2s; z-index: 900; }
+    .sidebar-nav { padding: 8px 0; }
+    .nav-section-title { font-size: 11px; font-weight: 600; color: var(--text-secondary); padding: 16px 16px 4px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; font-size: 13px; font-weight: 500; transition: background 0.15s; white-space: nowrap; }
+    .nav-item:hover { background: #e8e6e4; }
+    .nav-item[aria-current="page"] { background: var(--primary-light); color: var(--primary); border-left: 3px solid var(--primary); }
+    .nav-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+    .nav-divider { border: none; border-top: 1px solid var(--border-color); margin: 8px 0; }
+    .nav-admin-label { font-size: 11px; color: var(--text-secondary); padding: 8px 16px 4px; display: flex; align-items: center; gap: 6px; }
+    .nav-admin-label::before, .nav-admin-label::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+    .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 850; }
+    .overlay.open { display: block; }
+    .page-header { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 22px; font-weight: 700; }
+    .admin-banner { background: #fff4ce; border: 1px solid var(--warning); border-radius: 6px; padding: 10px 16px; margin-bottom: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: var(--white); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); text-align: center; }
+    .stat-num { font-size: 24px; font-weight: 700; color: var(--primary); }
+    .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    /* Toolbar */
+    .toolbar { background: var(--white); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .search-wrap { flex: 1; min-width: 200px; position: relative; }
+    .search-input { width: 100%; height: 36px; padding: 7px 12px 7px 34px; font-size: 13px; border: 1px solid #8a8886; border-radius: 4px; }
+    .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,120,212,0.2); }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 13px; }
+    .filter-select { height: 36px; padding: 0 8px; border: 1px solid #8a8886; border-radius: 4px; font-size: 13px; color: var(--text-primary); background: var(--white); }
+    /* Card */
+    .card { background: var(--white); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+    .card-header { padding: 14px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 14px; font-weight: 700; }
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { background: #f8f7f6; padding: 10px 14px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 12px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+    .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: #faf9f8; }
+    .book-title-cell { font-weight: 600; color: var(--text-primary); }
+    .book-id { font-size: 11px; color: var(--text-secondary); font-family: monospace; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-success { background: #dff6dd; color: var(--success); }
+    .badge-warning { background: #fff4ce; color: #7d6608; }
+    .badge-danger { background: #fde7e9; color: var(--danger); }
+    .badge-gray { background: #f3f2f1; color: var(--text-secondary); }
+    .num-cell { text-align: center; font-weight: 600; }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 3px; cursor: pointer; border: 1px solid; font-weight: 600; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; }
+    .btn-sm-outline { background: var(--white); color: var(--text-primary); border-color: #8a8886; }
+    .btn-sm-outline:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+    .btn-sm-danger { background: #fde7e9; color: var(--danger); border-color: var(--danger); }
+    .btn-sm-danger:hover { background: #fbd2d4; }
+    .btn { height: 36px; padding: 0 16px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: var(--primary); color: var(--white); border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-color); }
+    .page-info { font-size: 13px; color: var(--text-secondary); }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn { width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--white); color: var(--text-primary); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .page-btn:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+    .page-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+    /* Delete confirm modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--white); border-radius: 8px; padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-modal { height: 36px; padding: 0 16px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid; }
+    .btn-cancel { background: var(--white); color: var(--text-primary); border-color: #8a8886; }
+    .btn-delete { background: var(--danger); color: var(--white); border-color: var(--danger); }
+    .app-footer { margin-left: var(--sidebar-width); padding: 16px 24px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-color); text-align: center; }
+    @media (max-width: 1023px) and (min-width: 768px) {
+      .sidebar { width: var(--sidebar-mini); }
+      .nav-label, .nav-section-title, .nav-admin-label { display: none; }
+      .nav-item { padding: 12px; justify-content: center; }
+      .nav-icon { width: auto; font-size: 18px; }
+      .main-content { margin-left: var(--sidebar-mini); }
+      .app-footer { margin-left: var(--sidebar-mini); }
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 767px) {
+      .hamburger-btn { display: block; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 16px; }
+      .app-footer { margin-left: 0; }
+      .font-size-controls span { display: none; }
+      .data-table { display: block; overflow-x: auto; }
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+    }
+    a:focus, button:focus, input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<header class="app-header" role="banner">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く" aria-expanded="false">☰</button>
+  <a href="./dashboard.html" class="app-logo"><span>📚</span> LibraryMS</a>
+  <div class="header-spacer"></div>
+  <div class="font-size-controls" role="group" aria-label="文字サイズ切り替え">
+    <span>文字サイズ:</span>
+    <button class="font-btn active" data-size="14">標準</button>
+    <button class="font-btn" data-size="16">大</button>
+    <button class="font-btn" data-size="18">特大</button>
+  </div>
+  <div class="dropdown">
+    <button class="header-icon-btn" id="notifBtn" aria-label="通知（2件）" aria-expanded="false">🔔<span class="notif-badge">2</span></button>
+    <div class="dropdown-menu notif-dropdown" id="notifMenu">
+      <div class="notif-header">通知</div>
+      <div class="notif-item unread"><div>「Clean Code」の返却期限を過ぎています</div><div class="notif-time">2024/06/01</div></div>
+      <div class="notif-item unread"><div>「Clean Architecture」が利用可能になりました</div><div class="notif-time">2024/06/05</div></div>
+    </div>
+  </div>
+  <div class="dropdown">
+    <button class="user-menu-btn" id="userMenuBtn" aria-expanded="false"><div class="user-avatar">山</div>山田 太郎 ▾</button>
+    <div class="dropdown-menu" id="userMenu">
+      <a href="./profile.html">👤 プロフィール</a><a href="./password.html">🔑 パスワード変更</a>
+      <hr class="dropdown-divider"><a href="./login.html">🚪 ログアウト</a>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="メインナビゲーション">
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">メニュー</div>
+    <a href="./dashboard.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">ダッシュボード</span></a>
+    <a href="./activity.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">アクティビティ</span></a>
+    <a href="./books.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-label">図書一覧・検索</span></a>
+    <a href="./loan-history.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-label">貸出履歴</span></a>
+    <a href="./reservations.html" class="nav-item"><span class="nav-icon">🔖</span><span class="nav-label">予約一覧</span></a>
+    <a href="./profile.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">プロフィール</span></a>
+    <a href="./password.html" class="nav-item"><span class="nav-icon">🔑</span><span class="nav-label">パスワード変更</span></a>
+    <!-- 管理者のみ表示 -->
+    <hr class="nav-divider">
+    <div class="nav-admin-label">管理者のみ</div>
+    <a href="./book-management.html" class="nav-item" aria-current="page"><span class="nav-icon">📗</span><span class="nav-label">図書管理</span></a>
+    <a href="./user-management.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">ユーザ管理</span></a>
+  </nav>
+</aside>
+<div class="overlay" id="overlay"></div>
+
+<main class="main-content" role="main">
+  <div class="page-header">
+    <h1 class="page-title">📗 図書管理</h1>
+    <a href="./book-form.html" class="btn btn-primary">＋ 新規図書追加</a>
+  </div>
+
+  <div class="admin-banner" role="note">
+    <span>🔒</span>
+    <strong>管理者専用機能：</strong> 図書の登録・編集・削除は管理者のみ実行できます
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" role="region" aria-label="図書統計">
+    <div class="stat-card">
+      <div class="stat-num">12</div>
+      <div class="stat-label">登録図書数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--success)">28</div>
+      <div class="stat-label">総在庫数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--warning)">5</div>
+      <div class="stat-label">貸出中</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--danger)">2</div>
+      <div class="stat-label">予約受付中</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input class="search-input" type="search" placeholder="タイトル・著者・ISBNで検索..." aria-label="図書を検索">
+    </div>
+    <select class="filter-select" aria-label="カテゴリフィルター">
+      <option value="">カテゴリ: すべて</option>
+      <option>コンピュータ</option>
+      <option>プロジェクト管理</option>
+      <option>キャリア</option>
+    </select>
+    <select class="filter-select" aria-label="在庫状況フィルター">
+      <option value="">在庫: すべて</option>
+      <option>在庫あり</option>
+      <option>貸出中（全冊）</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">図書一覧</h2>
+      <span style="font-size:13px;color:var(--text-secondary)">全12件</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" aria-label="図書管理一覧">
+        <thead>
+          <tr>
+            <th>書籍ID</th>
+            <th>タイトル / 著者</th>
+            <th>ISBN</th>
+            <th>カテゴリ</th>
+            <th>在庫数</th>
+            <th>貸出中</th>
+            <th>予約数</th>
+            <th>状態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="book-id">B-00001</span></td>
+            <td><div class="book-title-cell">Clean Code</div><div style="font-size:11px;color:var(--text-secondary)">Robert C. Martin</div></td>
+            <td style="font-family:monospace;font-size:12px">978-0-13-235088-4</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">3</td>
+            <td class="num-cell" style="color:var(--warning);font-weight:700">1</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00002</span></td>
+            <td><div class="book-title-cell">リーダブルコード</div><div style="font-size:11px;color:var(--text-secondary)">Dustin Boswell</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-87311-535-3</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell" style="color:var(--danger);font-weight:700">2</td>
+            <td class="num-cell">1</td>
+            <td><span class="badge badge-gray">全冊貸出中</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00003</span></td>
+            <td><div class="book-title-cell">ドメイン駆動設計</div><div style="font-size:11px;color:var(--text-secondary)">Eric Evans</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-7981-2878-9</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell" style="color:var(--warning);font-weight:700">1</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00004</span></td>
+            <td><div class="book-title-cell">Effective Java</div><div style="font-size:11px;color:var(--text-secondary)">Joshua Bloch</div></td>
+            <td style="font-family:monospace;font-size:12px">978-0-13-468599-1</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell" style="color:var(--danger);font-weight:700">2</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-gray">全冊貸出中</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00005</span></td>
+            <td><div class="book-title-cell">Design Patterns</div><div style="font-size:11px;color:var(--text-secondary)">Gang of Four</div></td>
+            <td style="font-family:monospace;font-size:12px">978-0-20-163361-5</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">3</td>
+            <td class="num-cell">0</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00006</span></td>
+            <td><div class="book-title-cell">Clean Architecture</div><div style="font-size:11px;color:var(--text-secondary)">Robert C. Martin</div></td>
+            <td style="font-family:monospace;font-size:12px">978-0-13-449416-6</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell">0</td>
+            <td class="num-cell" style="color:var(--primary);font-weight:700">1</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00007</span></td>
+            <td><div class="book-title-cell">プログラミングRust</div><div style="font-size:11px;color:var(--text-secondary)">Jim Blandy</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-87311-903-0</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell">0</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00008</span></td>
+            <td><div class="book-title-cell">人月の神話</div><div style="font-size:11px;color:var(--text-secondary)">Frederick P. Brooks Jr.</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-89471-665-4</td>
+            <td>プロジェクト管理</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell">0</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00009</span></td>
+            <td><div class="book-title-cell">ピープルウェア</div><div style="font-size:11px;color:var(--text-secondary)">Tom DeMarco</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-82228-296-3</td>
+            <td>プロジェクト管理</td>
+            <td class="num-cell">1</td>
+            <td class="num-cell" style="color:var(--danger);font-weight:700">1</td>
+            <td class="num-cell" style="color:var(--primary);font-weight:700">1</td>
+            <td><span class="badge badge-gray">全冊貸出中</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00010</span></td>
+            <td><div class="book-title-cell">達人プログラマー</div><div style="font-size:11px;color:var(--text-secondary)">Andrew Hunt</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-27421-976-9</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell">0</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00011</span></td>
+            <td><div class="book-title-cell">SOFT SKILLS</div><div style="font-size:11px;color:var(--text-secondary)">John Sonmez</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-82228-892-7</td>
+            <td>キャリア</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell">0</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="book-id">B-00012</span></td>
+            <td><div class="book-title-cell">UNIXという考え方</div><div style="font-size:11px;color:var(--text-secondary)">Mike Gancarz</div></td>
+            <td style="font-family:monospace;font-size:12px">978-4-27421-974-5</td>
+            <td>コンピュータ</td>
+            <td class="num-cell">2</td>
+            <td class="num-cell">0</td>
+            <td class="num-cell">0</td>
+            <td><span class="badge badge-success">在庫あり</span></td>
+            <td><div style="display:flex;gap:4px"><a href="./book-form.html" class="btn-sm btn-sm-outline">✏️ 編集</a><button class="btn-sm btn-sm-danger delete-btn">🗑 削除</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span class="page-info">1–12 / 12件</span>
+      <div class="page-btns">
+        <button class="page-btn">‹</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">›</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+  <div class="modal">
+    <h3 id="deleteModalTitle">⚠️ 図書を削除しますか？</h3>
+    <p>
+      「Clean Code」を削除しようとしています。<br>
+      <strong>この操作は取り消せません。</strong><br>
+      関連する貸出履歴・予約情報もすべて削除されます。
+    </p>
+    <div class="modal-actions">
+      <button class="btn-modal btn-cancel" id="modalCancelBtn">キャンセル</button>
+      <button class="btn-modal btn-delete">削除する</button>
+    </div>
+  </div>
+</div>
+
+<footer class="app-footer" role="contentinfo">© 2024 LibraryMS — 図書管理システム</footer>
+
+<script>
+  const hamburgerBtn=document.getElementById('hamburgerBtn'),sidebar=document.getElementById('sidebar'),overlay=document.getElementById('overlay');
+  function toggleSidebar(){const o=sidebar.classList.toggle('open');overlay.classList.toggle('open',o);hamburgerBtn.setAttribute('aria-expanded',o);}
+  hamburgerBtn.addEventListener('click',toggleSidebar);overlay.addEventListener('click',toggleSidebar);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(sidebar.classList.contains('open'))toggleSidebar();deleteModal.classList.remove('open');}});
+  document.querySelectorAll('.font-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.font-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.documentElement.style.fontSize=btn.dataset.size+'px';});});
+  const notifBtn=document.getElementById('notifBtn'),notifMenu=document.getElementById('notifMenu'),userMenuBtn=document.getElementById('userMenuBtn'),userMenu=document.getElementById('userMenu');
+  notifBtn.addEventListener('click',e=>{e.stopPropagation();notifMenu.classList.toggle('open');userMenu.classList.remove('open');});
+  userMenuBtn.addEventListener('click',e=>{e.stopPropagation();userMenu.classList.toggle('open');notifMenu.classList.remove('open');});
+  document.addEventListener('click',()=>{notifMenu.classList.remove('open');userMenu.classList.remove('open');});
+  // Delete modal
+  const deleteModal=document.getElementById('deleteModal');
+  document.querySelectorAll('.delete-btn').forEach(btn=>{btn.addEventListener('click',()=>deleteModal.classList.add('open'));});
+  document.getElementById('modalCancelBtn').addEventListener('click',()=>deleteModal.classList.remove('open'));
+  deleteModal.addEventListener('click',e=>{if(e.target===deleteModal)deleteModal.classList.remove('open');});
+</script>
+</body>
+</html>

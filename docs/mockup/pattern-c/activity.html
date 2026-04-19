@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アクティビティフィード — 図書管理システム</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; background: #fffbf0; color: #333; font-size: 16px; }
+    a { color: #ff8c00; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+    .breadcrumb { padding: 12px 0; font-size: 14px; color: #666; margin-bottom: 8px; }
+    .breadcrumb a { color: #ff8c00; text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb .sep { margin: 0 6px; color: #999; }
+    .page-title { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 20px; }
+    /* timeline */
+    .timeline { position: relative; padding-left: 0; }
+    .timeline-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 14px 16px; background: #fff; border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 12px; transition: box-shadow 0.15s;
+    }
+    .timeline-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.14); }
+    .timeline-item.overdue { background: #ffebee; border-left: 4px solid #c62828; }
+    .timeline-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .icon-return { background: #e8f5e9; }
+    .icon-loan   { background: #e3f2fd; }
+    .icon-reserve{ background: #fff9c4; }
+    .icon-overdue{ background: #ffebee; }
+    .timeline-content { flex: 1; }
+    .timeline-text { font-size: 15px; color: #333; line-height: 1.5; }
+    .timeline-date { font-size: 12px; color: #999; margin-top: 4px; }
+    .overdue .timeline-text { color: #c62828; font-weight: bold; }
+    @media (max-width: 768px) {
+      #bottom-nav { display: flex !important; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #ff8c00; justify-content: space-around; padding: 8px 0 12px; z-index: 200; }
+      #bottom-nav a { display: flex; flex-direction: column; align-items: center; color: #ff8c00; text-decoration: none; font-size: 10px; gap: 2px; }
+      #bottom-nav a span { font-size: 10px; }
+      body { padding-bottom: 70px; }
+    }
+  </style>
+</head>
+<body>
+  <header style="background:#ff8c00;color:#fff;height:60px;display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+    <a href="home.html" style="color:#fff;text-decoration:none;font-size:24px;margin-right:12px;" title="ホーム">🏠</a>
+    <span style="font-size:20px;font-weight:bold;flex:1;">📚 図書管理システム</span>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <select onchange="changeFontSize(this.value)" style="padding:4px 8px;border-radius:6px;border:none;font-size:14px;" title="文字サイズ">
+        <option value="16">標準</option>
+        <option value="18">大</option>
+        <option value="20">特大</option>
+      </select>
+      <span style="font-size:14px;">👤 山田 太郎</span>
+      <a href="login.html" style="background:#fff;color:#ff8c00;padding:6px 14px;border-radius:20px;text-decoration:none;font-size:14px;font-weight:bold;">ログアウト</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="breadcrumb" aria-label="パンくずリスト">
+      <a href="home.html">🏠 ホーム</a>
+      <span class="sep">›</span>
+      <span style="color:#333;">アクティビティフィード</span>
+    </nav>
+    <h1 class="page-title">🔔 アクティビティフィード</h1>
+
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-return">↩️</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「プロジェクトマネジメント知識体系ガイド」を返却しました</div>
+          <div class="timeline-date">📅 2024-01-15</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-loan">📖</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「Clean Code」を借りました</div>
+          <div class="timeline-date">📅 2024-01-12</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-reserve">🔖</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「リーダブルコード」を予約しました</div>
+          <div class="timeline-date">📅 2024-01-10</div>
+        </div>
+      </div>
+
+      <div class="timeline-item overdue">
+        <div class="timeline-icon icon-overdue">⚠️</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「JavaScript入門」の返却期限が過ぎています</div>
+          <div class="timeline-date">📅 2024-01-08</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-loan">📖</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「デザインパターン入門」を借りました</div>
+          <div class="timeline-date">📅 2024-01-05</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-return">↩️</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「達人プログラマー」を返却しました</div>
+          <div class="timeline-date">📅 2024-01-03</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-reserve">🔖</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「ドメイン駆動設計」を予約しました</div>
+          <div class="timeline-date">📅 2024-01-01</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-loan">📖</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「アジャイルサムライ」を借りました</div>
+          <div class="timeline-date">📅 2023-12-28</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-return">↩️</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「情熱プログラマー」を返却しました</div>
+          <div class="timeline-date">📅 2023-12-22</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-loan">📖</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「プログラマのためのSQL」を借りました</div>
+          <div class="timeline-date">📅 2023-12-20</div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-icon icon-reserve">🔖</div>
+        <div class="timeline-content">
+          <div class="timeline-text">「リファクタリング」を予約しました</div>
+          <div class="timeline-date">📅 2023-12-15</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <nav style="display:none;" id="bottom-nav" aria-label="ボトムナビゲーション">
+    <a href="home.html">🏠<span>ホーム</span></a>
+    <a href="books.html">🔍<span>図書検索</span></a>
+    <a href="dashboard.html">📖<span>貸出状況</span></a>
+    <a href="profile.html">👤<span>プロフィール</span></a>
+  </nav>
+
+  <script>
+    function changeFontSize(size) {
+      document.body.style.fontSize = size + 'px';
+      localStorage.setItem('fontSize', size);
+    }
+    window.addEventListener('DOMContentLoaded', function() {
+      var s = localStorage.getItem('fontSize');
+      if (s) { document.body.style.fontSize = s + 'px'; }
+    });
+  </script>
+</body>
+</html>
