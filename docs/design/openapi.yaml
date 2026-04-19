@@ -1,0 +1,1784 @@
+openapi: "3.0.3"
+info:
+  title: 図書管理システム API
+  version: "1.0.0"
+  description: 図書管理システムのREST API仕様書
+
+servers:
+  - url: http://localhost:8080
+    description: 開発環境
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/auth/login:
+    post:
+      summary: ログイン
+      description: ユーザIDまたはメールアドレスとパスワードで認証し、JWTトークンを返却する
+      operationId: login
+      security: []
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/auth/logout:
+    post:
+      summary: ログアウト
+      description: JWTトークンを無効化してセッションを終了する
+      operationId: logout
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: ログアウト成功
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/me/profile:
+    get:
+      summary: プロフィール取得
+      description: ログイン中ユーザ自身のプロフィール情報を取得する
+      operationId: getMyProfile
+      tags:
+        - Me
+      responses:
+        '200':
+          description: プロフィール取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: プロフィール更新
+      description: ログイン中ユーザ自身の名前を更新する
+      operationId: updateMyProfile
+      tags:
+        - Me
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: プロフィール更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/me/password:
+    put:
+      summary: パスワード変更
+      description: ログイン中ユーザ自身のパスワードを変更する
+      operationId: changeMyPassword
+      tags:
+        - Me
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: パスワード変更成功
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/me/settings:
+    put:
+      summary: 設定更新
+      description: ログイン中ユーザ自身のフォントサイズ設定を更新する
+      operationId: updateMySettings
+      tags:
+        - Me
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: 設定更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/me/loans:
+    get:
+      summary: 自分の貸出情報取得
+      description: ログイン中ユーザの貸出状況・貸出中図書一覧・履歴を取得する
+      operationId: getMyLoans
+      tags:
+        - Me
+      responses:
+        '200':
+          description: 貸出情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyLoansResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/me/reservations:
+    get:
+      summary: 自分の予約一覧取得
+      description: ログイン中ユーザの予約一覧を取得する
+      operationId: getMyReservations
+      tags:
+        - Me
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: ページ番号
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 1ページあたりの件数
+      responses:
+        '200':
+          description: 予約一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyReservationsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/me/activities:
+    get:
+      summary: アクティビティフィード取得
+      description: ログイン中ユーザの最新の貸出・返却・予約アクティビティを取得する
+      operationId: getMyActivities
+      tags:
+        - Me
+      responses:
+        '200':
+          description: アクティビティ取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitiesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/books:
+    get:
+      summary: 図書一覧・検索
+      description: 図書の検索・一覧取得。タイトル・著者・カテゴリ・ISBNで絞り込み可能
+      operationId: searchBooks
+      tags:
+        - Books
+      parameters:
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
+          description: タイトル（部分一致）
+        - name: author
+          in: query
+          required: false
+          schema:
+            type: string
+          description: 著者名（部分一致）
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: カテゴリ（部分一致）
+        - name: isbn
+          in: query
+          required: false
+          schema:
+            type: string
+          description: ISBN（部分一致）
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: ページ番号
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 1ページあたりの件数
+      responses:
+        '200':
+          description: 図書一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BooksResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/books/{id}:
+    get:
+      summary: 図書詳細取得
+      description: 指定した図書の詳細情報を取得する。ログイン中ユーザの貸出・予約状況も含む
+      operationId: getBook
+      tags:
+        - Books
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 図書ID
+      responses:
+        '200':
+          description: 図書詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/loans:
+    post:
+      summary: 図書貸出
+      description: 指定した図書を貸し出す。貸出上限・延滞中チェックを行う
+      operationId: createLoan
+      tags:
+        - Loans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLoanRequest'
+      responses:
+        '201':
+          description: 貸出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/loans/{id}/return:
+    put:
+      summary: 図書返却
+      description: 指定した貸出IDの図書を返却する
+      operationId: returnLoan
+      tags:
+        - Loans
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 貸出ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnLoanRequest'
+      responses:
+        '200':
+          description: 返却成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnLoanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/reservations:
+    post:
+      summary: 予約登録
+      description: 指定した図書を予約する。全冊貸出中の場合のみ予約可能
+      operationId: createReservation
+      tags:
+        - Reservations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReservationRequest'
+      responses:
+        '201':
+          description: 予約成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/reservations/{id}:
+    delete:
+      summary: 予約キャンセル
+      description: 指定した予約IDの予約をキャンセルする
+      operationId: cancelReservation
+      tags:
+        - Reservations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 予約ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelReservationRequest'
+      responses:
+        '204':
+          description: 予約キャンセル成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/books:
+    post:
+      summary: 図書登録（管理者）
+      description: 新しい図書を登録する。ADMINロールのみアクセス可能
+      operationId: createBook
+      tags:
+        - Admin - Books
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookRequest'
+      responses:
+        '201':
+          description: 図書登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBookResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/books/{id}:
+    put:
+      summary: 図書更新（管理者）
+      description: 指定した図書情報を更新する。ADMINロールのみアクセス可能
+      operationId: updateBook
+      tags:
+        - Admin - Books
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 図書ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookRequest'
+      responses:
+        '200':
+          description: 図書更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBookResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: 図書削除（管理者）
+      description: 指定した図書を削除する。ADMINロールのみアクセス可能
+      operationId: deleteBook
+      tags:
+        - Admin - Books
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 図書ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteRequest'
+      responses:
+        '204':
+          description: 図書削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/users:
+    get:
+      summary: ユーザ一覧取得（管理者）
+      description: ユーザ一覧を取得する。ADMINロールのみアクセス可能
+      operationId: getUsers
+      tags:
+        - Admin - Users
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: ページ番号
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 1ページあたりの件数
+      responses:
+        '200':
+          description: ユーザ一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: ユーザ登録（管理者）
+      description: 新しいユーザを登録する。ADMINロールのみアクセス可能
+      operationId: createUser
+      tags:
+        - Admin - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: ユーザ登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/users/{id}:
+    put:
+      summary: ユーザ更新（管理者）
+      description: 指定したユーザ情報を更新する。ADMINロールのみアクセス可能
+      operationId: updateUser
+      tags:
+        - Admin - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ユーザID（DB主キー）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: ユーザ更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: ユーザ削除（管理者）
+      description: 指定したユーザを削除する。ADMINロールのみアクセス可能
+      operationId: deleteUser
+      tags:
+        - Admin - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ユーザID（DB主キー）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteRequest'
+      responses:
+        '204':
+          description: ユーザ削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/users/{id}/password:
+    put:
+      summary: ユーザパスワード再設定（管理者）
+      description: 指定したユーザのパスワードを強制的に再設定する。ADMINロールのみアクセス可能
+      operationId: resetUserPassword
+      tags:
+        - Admin - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ユーザID（DB主キー）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminResetPasswordRequest'
+      responses:
+        '200':
+          description: パスワード再設定成功
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWTトークンによるBearer認証
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - loginId
+        - password
+      properties:
+        loginId:
+          type: string
+          description: ユーザIDまたはメールアドレス
+          example: "user001"
+        password:
+          type: string
+          description: パスワード
+          example: "password123"
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWTアクセストークン
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        userId:
+          type: integer
+          format: int64
+          description: ユーザID（DB主キー）
+          example: 1
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: ユーザロール
+          example: "USER"
+        name:
+          type: string
+          description: 表示名
+          example: "山田太郎"
+        fontSize:
+          type: string
+          enum: [NORMAL, LARGE, XLARGE]
+          description: フォントサイズ設定
+          example: "NORMAL"
+
+    ProfileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ユーザID（DB主キー）
+          example: 1
+        userId:
+          type: string
+          description: ユーザID（ログインID）
+          example: "user001"
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "user001@example.com"
+        name:
+          type: string
+          description: 表示名
+          example: "山田太郎"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: ロール
+          example: "USER"
+        fontSize:
+          type: string
+          enum: [NORMAL, LARGE, XLARGE]
+          description: フォントサイズ設定
+          example: "NORMAL"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    UpdateProfileRequest:
+      type: object
+      required:
+        - name
+        - version
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 表示名
+          example: "山田太郎"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+        - confirmPassword
+      properties:
+        currentPassword:
+          type: string
+          description: 現在のパスワード
+          example: "oldpassword123"
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: 新しいパスワード（8文字以上）
+          example: "newpassword456"
+        confirmPassword:
+          type: string
+          description: 新しいパスワード（確認）
+          example: "newpassword456"
+
+    UpdateSettingsRequest:
+      type: object
+      required:
+        - fontSize
+        - version
+      properties:
+        fontSize:
+          type: string
+          enum: [NORMAL, LARGE, XLARGE]
+          description: フォントサイズ設定
+          example: "LARGE"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    SettingsResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ユーザID（DB主キー）
+          example: 1
+        fontSize:
+          type: string
+          enum: [NORMAL, LARGE, XLARGE]
+          description: フォントサイズ設定
+          example: "LARGE"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 1
+
+    LoanItem:
+      type: object
+      properties:
+        loanId:
+          type: integer
+          format: int64
+          description: 貸出ID
+          example: 1
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 10
+        bookTitle:
+          type: string
+          description: 図書タイトル
+          example: "Java入門"
+        author:
+          type: string
+          description: 著者名
+          example: "著者名"
+        loanedAt:
+          type: string
+          format: date-time
+          description: 貸出日時
+          example: "2024-01-01T10:00:00Z"
+        dueDate:
+          type: string
+          format: date
+          description: 返却期限
+          example: "2024-01-08"
+        returnedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 返却日時（未返却の場合はnull）
+          example: null
+        status:
+          type: string
+          enum: [ACTIVE, RETURNED, OVERDUE]
+          description: 貸出ステータス
+          example: "ACTIVE"
+        isOverdue:
+          type: boolean
+          description: 延滞フラグ
+          example: false
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    MyLoansResponse:
+      type: object
+      properties:
+        currentLoanCount:
+          type: integer
+          description: 現在の貸出件数
+          example: 2
+        remainingLoanCount:
+          type: integer
+          description: 残り貸出可能件数（最大5冊）
+          example: 3
+        isOverdue:
+          type: boolean
+          description: 延滞中フラグ
+          example: false
+        loans:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoanItem'
+
+    ReservationItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 予約ID
+          example: 1
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 10
+        bookTitle:
+          type: string
+          description: 図書タイトル
+          example: "Java入門"
+        author:
+          type: string
+          description: 著者名
+          example: "著者名"
+        reservedAt:
+          type: string
+          format: date-time
+          description: 予約日時
+          example: "2024-01-01T10:00:00Z"
+        queuePosition:
+          type: integer
+          description: 予約順位
+          example: 1
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    MyReservationsResponse:
+      type: object
+      properties:
+        reservations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservationItem'
+        total:
+          type: integer
+          description: 総件数
+          example: 5
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: アクティビティID
+          example: 1
+        type:
+          type: string
+          enum: [LOAN, RETURN, RESERVATION]
+          description: アクティビティ種別
+          example: "LOAN"
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 10
+        bookTitle:
+          type: string
+          description: 図書タイトル
+          example: "Java入門"
+        datetime:
+          type: string
+          format: date-time
+          description: アクティビティ発生日時
+          example: "2024-01-01T10:00:00Z"
+
+    ActivitiesResponse:
+      type: object
+      properties:
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityItem'
+
+    BookSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+        title:
+          type: string
+          description: タイトル
+          example: "Java入門"
+        author:
+          type: string
+          description: 著者名
+          example: "著者名"
+        isbn:
+          type: string
+          description: ISBN
+          example: "9784123456789"
+        publisher:
+          type: string
+          description: 出版社
+          example: "出版社名"
+        publishedYear:
+          type: integer
+          description: 出版年
+          example: 2020
+        category:
+          type: string
+          description: カテゴリ
+          example: "プログラミング"
+        totalCopies:
+          type: integer
+          description: 総蔵書数
+          example: 3
+        availableCopies:
+          type: integer
+          description: 貸出可能冊数
+          example: 1
+        earliestDueDate:
+          type: string
+          format: date
+          nullable: true
+          description: 最短返却予定日（全冊貸出中の場合）
+          example: "2024-01-08"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    BooksResponse:
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookSummary'
+        total:
+          type: integer
+          description: 総件数
+          example: 50
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+
+    BookDetailResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+        title:
+          type: string
+          description: タイトル
+          example: "Java入門"
+        author:
+          type: string
+          description: 著者名
+          example: "著者名"
+        isbn:
+          type: string
+          description: ISBN
+          example: "9784123456789"
+        publisher:
+          type: string
+          description: 出版社
+          example: "出版社名"
+        publishedYear:
+          type: integer
+          description: 出版年
+          example: 2020
+        category:
+          type: string
+          description: カテゴリ
+          example: "プログラミング"
+        totalCopies:
+          type: integer
+          description: 総蔵書数
+          example: 3
+        availableCopies:
+          type: integer
+          description: 貸出可能冊数
+          example: 0
+        reservationCount:
+          type: integer
+          description: 予約件数
+          example: 2
+        earliestDueDate:
+          type: string
+          format: date
+          nullable: true
+          description: 最短返却予定日
+          example: "2024-01-08"
+        currentUserLoanId:
+          type: integer
+          format: int64
+          nullable: true
+          description: ログイン中ユーザの貸出ID（貸出中の場合）
+          example: 5
+        currentUserLoanVersion:
+          type: integer
+          format: int64
+          nullable: true
+          description: ログイン中ユーザの貸出バージョン（楽観的ロック用）
+          example: 0
+        currentUserReservationId:
+          type: integer
+          format: int64
+          nullable: true
+          description: ログイン中ユーザの予約ID（予約中の場合）
+          example: null
+        currentUserReservationVersion:
+          type: integer
+          format: int64
+          nullable: true
+          description: ログイン中ユーザの予約バージョン（楽観的ロック用）
+          example: null
+        currentUserStatus:
+          type: string
+          enum: [none, loaned, reserved]
+          description: ログイン中ユーザのこの図書に対するステータス
+          example: "loaned"
+        version:
+          type: integer
+          format: int64
+          description: 図書の楽観的ロック用バージョン
+          example: 0
+
+    CreateLoanRequest:
+      type: object
+      required:
+        - bookId
+      properties:
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+
+    LoanResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 貸出ID
+          example: 1
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+        bookTitle:
+          type: string
+          description: 図書タイトル
+          example: "Java入門"
+        loanedAt:
+          type: string
+          format: date-time
+          description: 貸出日時
+          example: "2024-01-01T10:00:00Z"
+        dueDate:
+          type: string
+          format: date
+          description: 返却期限（貸出日から7日後）
+          example: "2024-01-08"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    ReturnLoanRequest:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    ReturnLoanResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 貸出ID
+          example: 1
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+        bookTitle:
+          type: string
+          description: 図書タイトル
+          example: "Java入門"
+        returnedAt:
+          type: string
+          format: date-time
+          description: 返却日時
+          example: "2024-01-05T15:00:00Z"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 1
+
+    CreateReservationRequest:
+      type: object
+      required:
+        - bookId
+      properties:
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+
+    ReservationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 予約ID
+          example: 1
+        bookId:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+        bookTitle:
+          type: string
+          description: 図書タイトル
+          example: "Java入門"
+        reservedAt:
+          type: string
+          format: date-time
+          description: 予約日時
+          example: "2024-01-01T10:00:00Z"
+        queuePosition:
+          type: integer
+          description: 予約順位
+          example: 2
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    CancelReservationRequest:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    CreateBookRequest:
+      type: object
+      required:
+        - title
+        - author
+        - isbn
+        - totalCopies
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: タイトル
+          example: "Java入門"
+        author:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 著者名
+          example: "著者名"
+        isbn:
+          type: string
+          pattern: '^\d{10}(\d{3})?$'
+          description: ISBN（10桁または13桁の数字）
+          example: "9784123456789"
+        publisher:
+          type: string
+          maxLength: 100
+          description: 出版社
+          example: "出版社名"
+        publishedYear:
+          type: integer
+          minimum: 1000
+          maximum: 9999
+          description: 出版年
+          example: 2020
+        category:
+          type: string
+          maxLength: 50
+          description: カテゴリ
+          example: "プログラミング"
+        totalCopies:
+          type: integer
+          minimum: 1
+          description: 総蔵書数
+          example: 3
+
+    UpdateBookRequest:
+      type: object
+      required:
+        - title
+        - author
+        - isbn
+        - totalCopies
+        - version
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: タイトル
+          example: "Java入門 改訂版"
+        author:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 著者名
+          example: "著者名"
+        isbn:
+          type: string
+          pattern: '^\d{10}(\d{3})?$'
+          description: ISBN（10桁または13桁の数字）
+          example: "9784123456789"
+        publisher:
+          type: string
+          maxLength: 100
+          description: 出版社
+          example: "出版社名"
+        publishedYear:
+          type: integer
+          minimum: 1000
+          maximum: 9999
+          description: 出版年
+          example: 2021
+        category:
+          type: string
+          maxLength: 50
+          description: カテゴリ
+          example: "プログラミング"
+        totalCopies:
+          type: integer
+          minimum: 1
+          description: 総蔵書数
+          example: 5
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    AdminBookResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 図書ID
+          example: 1
+        title:
+          type: string
+          description: タイトル
+          example: "Java入門"
+        author:
+          type: string
+          description: 著者名
+          example: "著者名"
+        isbn:
+          type: string
+          description: ISBN
+          example: "9784123456789"
+        publisher:
+          type: string
+          description: 出版社
+          example: "出版社名"
+        publishedYear:
+          type: integer
+          description: 出版年
+          example: 2020
+        category:
+          type: string
+          description: カテゴリ
+          example: "プログラミング"
+        totalCopies:
+          type: integer
+          description: 総蔵書数
+          example: 3
+        availableCopies:
+          type: integer
+          description: 貸出可能冊数
+          example: 3
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    DeleteRequest:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ユーザID（DB主キー）
+          example: 1
+        userId:
+          type: string
+          description: ユーザID（ログインID）
+          example: "user001"
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "user001@example.com"
+        name:
+          type: string
+          description: 表示名
+          example: "山田太郎"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: ロール
+          example: "USER"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    UsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+        total:
+          type: integer
+          description: 総件数
+          example: 10
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+
+    CreateUserRequest:
+      type: object
+      required:
+        - userId
+        - email
+        - name
+        - password
+      properties:
+        userId:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: ユーザID（ログインID）
+          example: "user001"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: メールアドレス
+          example: "user001@example.com"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 表示名
+          example: "山田太郎"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          default: USER
+          description: ロール
+          example: "USER"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: 初期パスワード（8文字以上）
+          example: "password123"
+
+    UpdateUserRequest:
+      type: object
+      required:
+        - userId
+        - email
+        - name
+        - role
+        - version
+      properties:
+        userId:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: ユーザID（ログインID）
+          example: "user001"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: メールアドレス
+          example: "user001@example.com"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 表示名
+          example: "山田太郎"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: ロール
+          example: "USER"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    AdminUserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ユーザID（DB主キー）
+          example: 1
+        userId:
+          type: string
+          description: ユーザID（ログインID）
+          example: "user001"
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "user001@example.com"
+        name:
+          type: string
+          description: 表示名
+          example: "山田太郎"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: ロール
+          example: "USER"
+        version:
+          type: integer
+          format: int64
+          description: 楽観的ロック用バージョン
+          example: 0
+
+    AdminResetPasswordRequest:
+      type: object
+      required:
+        - newPassword
+      properties:
+        newPassword:
+          type: string
+          minLength: 8
+          maxLength: 100
+          description: 新しいパスワード（8文字以上）
+          example: "newpassword123"
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: エラーコード
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: エラーメッセージ
+          example: "入力内容に誤りがあります"
+        details:
+          type: array
+          items:
+            type: string
+          description: エラー詳細（フィールドレベルのエラー等）
+          example: ["タイトルは必須です"]
+
+  responses:
+    BadRequest:
+      description: リクエストが不正（バリデーションエラー等）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "VALIDATION_ERROR"
+            message: "入力内容に誤りがあります"
+            details: ["タイトルは必須です", "ISBNは10桁または13桁の数字で入力してください"]
+
+    Unauthorized:
+      description: 認証エラー（トークン未設定・無効・期限切れ）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "TOKEN_INVALID"
+            message: "認証トークンが無効です。再ログインしてください。"
+            details: []
+
+    Forbidden:
+      description: 権限エラー（ADMINロール必須）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "FORBIDDEN"
+            message: "この操作を行う権限がありません"
+            details: []
+
+    NotFound:
+      description: リソースが存在しない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "NOT_FOUND"
+            message: "指定されたリソースが見つかりません"
+            details: []
+
+    Conflict:
+      description: 競合エラー（楽観的ロックエラー・ビジネスルール違反）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "OPTIMISTIC_LOCK_ERROR"
+            message: "他の端末から変更が行われました。再読み込みしてください。"
+            details: []
+
+    InternalServerError:
+      description: サーバ内部エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "INTERNAL_SERVER_ERROR"
+            message: "サーバ内部エラーが発生しました"
+            details: []
