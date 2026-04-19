@@ -26,14 +26,14 @@ export default function ConfirmDialog({
           border: 'none', zIndex: 2000, cursor: 'default', padding: 0,
         }}
       />
-      <div
-        role="dialog"
+      <dialog
+        open
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         style={{
           position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           backgroundColor: '#fff', borderRadius: 8, padding: 32, maxWidth: 480, width: '90%',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 2001,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 2001, border: 'none', margin: 0,
         }}
       >
         <h3 id="confirm-dialog-title" style={{ margin: '0 0 16px', fontSize: 18, color: '#202124' }}>{title}</h3>
@@ -48,7 +48,7 @@ export default function ConfirmDialog({
             backgroundColor: dangerous ? '#d93025' : '#1a73e8', color: '#fff',
           }}>{confirmLabel}</button>
         </div>
-      </div>
+      </dialog>
     </>
   );
 }
