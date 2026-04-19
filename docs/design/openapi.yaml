@@ -1255,6 +1255,11 @@ components:
           enum: [none, loaned, reserved]
           description: ログイン中ユーザのこの図書に対するステータス
           example: "loaned"
+        currentUserQueuePosition:
+          type: integer
+          nullable: true
+          description: ログイン中ユーザの予約順位（currentUserStatusがreservedの場合に設定。1始まり。未予約・貸出中の場合はnull）
+          example: 2
         version:
           type: integer
           format: int64
