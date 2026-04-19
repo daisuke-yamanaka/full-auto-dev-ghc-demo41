@@ -24,8 +24,6 @@ class BookDaoTest {
     @Autowired
     private BookDao bookDao;
 
-    private static long testCounter = 0;
-
     private Book createTestBook(String suffix) {
         Book book = new Book();
         book.setTitle("TestBook_" + suffix);

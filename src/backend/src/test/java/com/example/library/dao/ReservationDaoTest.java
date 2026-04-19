@@ -85,10 +85,9 @@ class ReservationDaoTest {
 
     // TC-B055: getQueuePosition
     @Test
-    void getQueuePosition_firstReserver_positionOne() throws InterruptedException {
+    void getQueuePosition_firstReserver_positionOne() {
         Reservation r1 = buildReservation(testUser1.getId(), testBook.getId(), LocalDateTime.now());
-        Thread.sleep(10);
-        Reservation r2 = buildReservation(testUser2.getId(), testBook.getId(), LocalDateTime.now().plusNanos(1_000_000));
+        Reservation r2 = buildReservation(testUser2.getId(), testBook.getId(), LocalDateTime.now().plusNanos(10_000_000L));
         reservationDao.insert(r1);
         reservationDao.insert(r2);
 
@@ -101,10 +100,9 @@ class ReservationDaoTest {
 
     // TC-B056: findByBookIdOrderByReservedAt
     @Test
-    void findByBookIdOrderByReservedAt_orderedAscending() throws InterruptedException {
+    void findByBookIdOrderByReservedAt_orderedAscending() {
         LocalDateTime time1 = LocalDateTime.now();
-        Thread.sleep(10);
-        LocalDateTime time2 = LocalDateTime.now().plusNanos(1_000_000);
+        LocalDateTime time2 = LocalDateTime.now().plusNanos(10_000_000L);
 
         Reservation r1 = buildReservation(testUser1.getId(), testBook.getId(), time1);
         Reservation r2 = buildReservation(testUser2.getId(), testBook.getId(), time2);

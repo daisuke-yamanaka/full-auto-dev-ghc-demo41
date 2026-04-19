@@ -117,7 +117,7 @@ class BookServiceTest {
         request.setCategory("Web開発");
         request.setTotalCopies(3);
 
-        AdminBookResponse response = bookService.createBook(request);
+        bookService.createBook(request);
 
         ArgumentCaptor<Book> captor = ArgumentCaptor.forClass(Book.class);
         verify(bookDao).insert(captor.capture());
@@ -160,7 +160,7 @@ class BookServiceTest {
         request.setTotalCopies(5);
         request.setVersion(0L);
 
-        AdminBookResponse response = bookService.updateBook(10L, request);
+        bookService.updateBook(10L, request);
 
         ArgumentCaptor<Book> captor = ArgumentCaptor.forClass(Book.class);
         verify(bookDao).update(captor.capture());

@@ -81,7 +81,7 @@ public class ReservationService {
         reservation.setVersion(0L);
         reservation.setCreatedAt(LocalDateTime.now());
         reservation.setUpdatedAt(LocalDateTime.now());
-        var result = reservationDao.insert(reservation);
+        reservationDao.insert(reservation);
 
         OperationLog opLog = new OperationLog();
         opLog.setUserId(user.getId());

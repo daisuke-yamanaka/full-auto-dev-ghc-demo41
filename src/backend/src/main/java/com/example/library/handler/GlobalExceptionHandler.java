@@ -61,7 +61,6 @@ public class GlobalExceptionHandler {
         List<String> details = ex.getBindingResult().getFieldErrors().stream()
             .map(FieldError::getDefaultMessage)
             .toList();
-        String message = String.join(", ", details);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(new ErrorResponse("VALIDATION_ERROR", "入力内容に誤りがあります", details));
     }

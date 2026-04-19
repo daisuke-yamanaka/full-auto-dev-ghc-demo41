@@ -72,8 +72,9 @@ public class ActivityService {
                     Long bookId = Long.parseLong(opLog.getTargetId());
                     item.setBookId(bookId);
                     bookDao.findById(bookId).ifPresent(book -> item.setBookTitle(book.getTitle()));
-                } catch (NumberFormatException ignored) {}
-            }
+                } catch (NumberFormatException ignored) {
+                    // no-op: skip logs with non-numeric book IDs
+                }            }
 
             item.setDatetime(opLog.getCreatedAt());
             return item;

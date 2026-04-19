@@ -66,7 +66,7 @@ class UserServiceTest {
         request.setRole("USER");
         request.setPassword("password123");
 
-        AdminUserResponse response = userService.createUser(request);
+        userService.createUser(request);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userDao).insert(captor.capture());
