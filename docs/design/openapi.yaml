@@ -1428,6 +1428,7 @@ components:
           example: "9784123456789"
         publisher:
           type: string
+          minLength: 1
           maxLength: 100
           description: 出版社
           example: "出版社名"
@@ -1439,6 +1440,7 @@ components:
           example: 2020
         category:
           type: string
+          minLength: 1
           maxLength: 50
           description: カテゴリ
           example: "プログラミング"
@@ -1479,6 +1481,7 @@ components:
           example: "9784123456789"
         publisher:
           type: string
+          minLength: 1
           maxLength: 100
           description: 出版社
           example: "出版社名"
@@ -1490,6 +1493,7 @@ components:
           example: 2021
         category:
           type: string
+          minLength: 1
           maxLength: 50
           description: カテゴリ
           example: "プログラミング"
