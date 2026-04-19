@@ -127,7 +127,7 @@ export default function BookFormPage() {
     { key: 'totalCopies', label: '蔵書数', type: 'number', required: true },
   ];
 
-  const hasErrors = Object.keys(errors).length > 0;
+  const hasErrors = Object.values(errors).some(v => v !== undefined);
 
   return (
     <Layout>
