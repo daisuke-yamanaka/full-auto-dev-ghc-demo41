@@ -1,0 +1,138 @@
+[INFO] Scanning for projects...
+[WARNING] The artifact org.codehaus.mojo:sonar-maven-plugin:jar:3.9.1.2184 has been relocated to org.sonarsource.scanner.maven:sonar-maven-plugin:jar:3.9.1.2184: SonarQube plugin was moved to SonarSource organisation
+[INFO] 
+[INFO] ---------------------< com.example:library-system >---------------------
+[INFO] Building library-system 0.0.1-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- sonar-maven-plugin:3.9.1.2184:sonar (default-cli) @ library-system ---
+[INFO] User cache: C:\Users\COSMOROOT\.sonar\cache
+[INFO] SonarQube version: 25.6.0.109173
+[INFO] Default locale: "ja_JP", source code encoding: "UTF-8"
+[WARNING] Property 'env.WT_PROFILE_ID' is encrypted. The encryption of scanner properties is deprecated and will soon be removed.
+[INFO] Load global settings
+[INFO] Load global settings (done) | time=720ms
+[INFO] Server id: 147B411E-AZc7GuFaQvvfcIYlCIuV
+[INFO] Loading required plugins
+[INFO] Load plugins index
+[INFO] Load plugins index (done) | time=418ms
+[INFO] Load/download plugins
+[INFO] Load/download plugins (done) | time=225ms
+[INFO] Process project properties
+[INFO] Process project properties (done) | time=96ms
+[INFO] Project key: ghc-demo41-backend
+[INFO] Base dir: C:\work\full-auto-dev\ghc\ghc-demo41\repo\src\backend
+[INFO] Working dir: C:\work\full-auto-dev\ghc\ghc-demo41\repo\src\backend\target\sonar
+[INFO] Load project settings for component key: 'ghc-demo41-backend'
+[INFO] Load quality profiles
+[INFO] Load quality profiles (done) | time=187ms
+[INFO] Load active rules
+[INFO] Load active rules (done) | time=857ms
+[INFO] Load analysis cache
+[INFO] Load analysis cache (404) | time=30ms
+[INFO] Preprocessing files...
+[INFO] 2 languages detected in 84 preprocessed files (done) | time=2492ms
+[INFO] 0 files ignored because of scm ignore settings
+[INFO] Loading plugins for detected languages
+[INFO] Load/download plugins
+[INFO] Load/download plugins (done) | time=857ms
+[INFO] Load project repositories
+[INFO] Load project repositories (done) | time=39ms
+[INFO] Indexing files...
+[INFO] Project configuration:
+[INFO]   Excluded sources for coverage: **/*Test*.java
+[INFO] 84 files indexed (done) | time=153ms
+[INFO] Quality profile for java: Sonar way
+[INFO] Quality profile for xml: Sonar way
+[INFO] ------------- Run sensors on module GHC Demo41 Backend
+[INFO] Load metrics repository
+[INFO] Load metrics repository (done) | time=79ms
+[INFO] Sensor JavaSensor [java]
+[INFO] Configured Java source version (sonar.java.source): 17, preview features enabled (sonar.java.enablePreview): false
+[INFO] Server-side caching is enabled. The Java analyzer will not try to leverage data from a previous analysis.
+[INFO] Using ECJ batch to parse 72 Main java source files with batch size 427 KB.
+[INFO] Starting batch processing.
+[INFO] 0% analyzed
+[INFO] 50% analyzed
+[INFO] The Java analyzer cannot skip unchanged files in this context. A full analysis is performed for all files.
+[INFO] 61% analyzed
+[INFO] 71% analyzed
+[INFO] 93% analyzed
+[INFO] Slowest analyzed files (batch mode enabled):
+    src/main/java/com/example/library/service/BookService.java (2162ms, 9031B)
+    src/main/java/com/example/library/constants/BusinessConstants.java (1328ms, 227B)
+    src/main/java/com/example/library/service/LoanService.java (1304ms, 9323B)
+    src/main/java/com/example/library/config/DataInitializer.java (1040ms, 4613B)
+    src/main/java/com/example/library/service/UserService.java (1033ms, 8671B)
+    src/main/java/com/example/library/service/AuthService.java (1019ms, 3010B)
+[INFO] 100% analyzed
+[INFO] Batch processing: Done.
+[INFO] Did not optimize analysis for any files, performed a full analysis for all 72 files.
+[WARNING] Unresolved imports/types have been detected during analysis. Enable DEBUG mode to see them.
+[WARNING] Use of preview features have been detected during analysis. Enable DEBUG mode to see them.
+[INFO] Using ECJ batch to parse 11 Test java source files with batch size 427 KB.
+[INFO] Starting batch processing.
+[INFO] 0% analyzed
+[INFO] 81% analyzed
+[INFO] 100% analyzed
+[INFO] Batch processing: Done.
+[INFO] Did not optimize analysis for any files, performed a full analysis for all 11 files.
+[INFO] No "Generated" source files to scan.
+[INFO] Sensor JavaSensor [java] (done) | time=78249ms
+[INFO] Sensor SurefireSensor [java]
+[INFO] parsing [C:\work\full-auto-dev\ghc\ghc-demo41\repo\src\backend\target\surefire-reports]
+[INFO] Sensor SurefireSensor [java] (done) | time=1523ms
+[INFO] Sensor XML Sensor [xml]
+[INFO] 1 source file to be analyzed
+[INFO] 1/1 source file has been analyzed
+[INFO] Sensor XML Sensor [xml] (done) | time=588ms
+[INFO] Sensor JaCoCo XML Report Importer [jacoco]
+[INFO] 'sonar.coverage.jacoco.xmlReportPaths' is not defined. Using default locations: target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml,build/reports/jacoco/test/jacocoTestReport.xml
+[INFO] No report imported, no coverage information will be imported by JaCoCo XML Report Importer
+[INFO] Sensor JaCoCo XML Report Importer [jacoco] (done) | time=7ms
+[INFO] Sensor Java Config Sensor [iac]
+[INFO] 0 source files to be analyzed
+[INFO] 0/0 source files have been analyzed
+[INFO] Sensor Java Config Sensor [iac] (done) | time=70ms
+[INFO] Sensor IaC Docker Sensor [iac]
+[INFO] 0 source files to be analyzed
+[INFO] 0/0 source files have been analyzed
+[INFO] Sensor IaC Docker Sensor [iac] (done) | time=233ms
+[INFO] Sensor TextAndSecretsSensor [text]
+[INFO] Available processors: 8
+[INFO] Using 8 threads for analysis.
+[INFO] Start fetching files for the text and secrets analysis
+[INFO] Using Git CLI to retrieve untracked files
+[INFO] Retrieving language associated files and files included via "sonar.text.inclusions" that are tracked by git
+[INFO] Starting the text and secrets analysis
+[INFO] 84 source files to be analyzed for the text and secrets analysis
+[INFO] 84/84 source files have been analyzed for the text and secrets analysis
+[INFO] Sensor TextAndSecretsSensor [text] (done) | time=3193ms
+[INFO] ------------- Run sensors on project
+[INFO] Sensor Zero Coverage Sensor
+[INFO] Sensor Zero Coverage Sensor (done) | time=322ms
+[INFO] Sensor Java CPD Block Indexer
+[INFO] Sensor Java CPD Block Indexer (done) | time=314ms
+[INFO] ------------- Gather SCA dependencies on project
+[INFO] Dependency analysis skipped
+[INFO] SCM Publisher SCM provider for this project is: git
+[INFO] SCM Publisher 84 source files to be analyzed
+[INFO] 43/84 source files have been analyzed
+[INFO] SCM Publisher 84/84 source files have been analyzed (done) | time=16151ms
+[INFO] CPD Executor 33 files had no CPD blocks
+[INFO] CPD Executor Calculating CPD for 39 files
+[INFO] CPD Executor CPD calculation finished (done) | time=129ms
+[INFO] SCM revision ID '1bf7c9275c239b67a7fb8b15438675dcd0045bf5'
+[INFO] Analysis report generated in 3608ms, dir size=589.5 kB
+[INFO] Analysis report compressed in 6073ms, zip size=245.3 kB
+[INFO] Analysis report uploaded in 349ms
+[INFO] ANALYSIS SUCCESSFUL, you can find the results at: http://192.168.1.56:9000/dashboard?id=ghc-demo41-backend
+[INFO] Note that you will be able to access the updated dashboard once the server has processed the submitted analysis report
+[INFO] More about the report processing at http://192.168.1.56:9000/api/ce/task?id=f577ece1-abc3-4c4d-878c-d1b036aacf6e
+[INFO] Analysis total time: 2:12.784 s
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  03:07 min
+[INFO] Finished at: 2026-04-19T21:53:17+09:00
+[INFO] ------------------------------------------------------------------------

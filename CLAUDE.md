@@ -58,13 +58,13 @@
 
 | 工程 | ステータス | ブランチ | PR | 備考 |
 |------|----------|---------|-----|------|
-| 要件定義 | 未実施 | `feature/requirements` |  |  |
-| モック作成 | 未実施 | `feature/mockup` |  |  |
-| 設計 | 未実施 | `feature/design` |  |  |
-| 実装（バックエンド） | 未実施 | `feature/implementation-backend` |  |  |
-| 実装（フロントエンド） | 未実施 | `feature/implementation-frontend` |  |  |
-| 単体テスト | 未実施 | `feature/unit-test` |  |  |
-| E2Eテスト | 未実施 | `feature/e2e-test` |  |  |
+| 要件定義 | 完了 | `feature/requirements` | PR #1（マージ済み） |  |
+| モック作成 | 完了 | `feature/mockup` | PR #3（マージ済み） | パターンB採用 |
+| 設計 | 完了 | `feature/design` | PR #4（マージ済み） |  |
+| 実装（バックエンド） | 完了 | `feature/implementation-backend` | PR #5（マージ済み） | 全23エンドポイント実装済み |
+| 実装（フロントエンド） | 完了 | `feature/implementation-frontend` | PR #6（マージ済み） | 全15画面実装済み |
+| 単体テスト | 完了 | `feature/unit-test` | PR #7（マージ済み） | BE:83件/FE:148件 全PASS、カバレッジ全閾値クリア |
+| E2Eテスト | 完了 | `feature/system-test` | PR #8（マージ済み） | 56テスト全PASS・FR-001〜FR-031全件カバー |
 
 ## 採用モックデザイン方針（基本設計以降に反映すること）
 

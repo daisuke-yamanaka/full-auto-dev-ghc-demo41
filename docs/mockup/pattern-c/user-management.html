@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ユーザ管理 — 図書管理システム</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; background: #fffbf0; color: #333; font-size: 16px; }
+    a { color: #7B4B00; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 16px; }
+    .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #ff8c00; color: #1a1a1a; }
+    .btn-outline { background: #fff; color: #7B4B00; border: 2px solid #ff8c00; }
+    .btn-danger  { background: #c62828; color: #fff; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .breadcrumb { padding: 12px 0; font-size: 14px; color: #666; margin-bottom: 8px; }
+    .breadcrumb a { color: #7B4B00; text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb .sep { margin: 0 6px; color: #999; }
+    .page-title { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 12px; }
+    .admin-badge { display: inline-block; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: bold; margin-bottom: 16px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .summary-card { background: #fff; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .summary-card .number { font-size: 34px; font-weight: bold; }
+    .summary-card .label  { font-size: 13px; color: #666; margin-top: 4px; }
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    .toolbar input[type="text"] { flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; }
+    .toolbar input:focus { outline: none; border-color: #7B4B00; }
+    .toolbar select { padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff; }
+    .toolbar select:focus { outline: none; border-color: #7B4B00; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+    .badge-green { background: #e8f5e9; color: #2e7d32; }
+    .badge-red   { background: #ffebee; color: #c62828; }
+    .badge-blue  { background: #e3f2fd; color: #1565c0; }
+    .badge-gray  { background: #f5f5f5; color: #616161; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #fff3e0; padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #ffcc80; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    tr:nth-child(even) td { background: #fafafa; }
+    tr:hover td { background: #fff8f0; }
+    .tr-disabled td { background: #f5f5f5 !important; color: #aaa; }
+    .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 16px; }
+    .pagination a, .pagination span { display: inline-block; padding: 8px 13px; border-radius: 8px; font-size: 14px; font-weight: bold; text-decoration: none; border: 1px solid #ffcc80; color: #7B4B00; background: #fff; transition: background 0.15s; }
+    .pagination a:hover { background: #fff3e0; }
+    .pagination .active { background: #ff8c00; color: #1a1a1a; border-color: #7B4B00; }
+    @media (max-width: 768px) {
+      #bottom-nav { display: flex !important; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #ff8c00; justify-content: space-around; padding: 8px 0 12px; z-index: 200; }
+      #bottom-nav a { display: flex; flex-direction: column; align-items: center; color: #7B4B00; text-decoration: none; font-size: 10px; gap: 2px; }
+      #bottom-nav a span { font-size: 10px; }
+      body { padding-bottom: 70px; }
+      .card { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header style="background:#ff8c00;color:#1a1a1a;height:60px;display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+    <a href="home.html" style="color: #1a1a1a;text-decoration:none;font-size:24px;margin-right:12px;" title="ホーム">🏠</a>
+    <span style="font-size:20px;font-weight:bold;flex:1;">📚 図書管理システム</span>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <select onchange="changeFontSize(this.value)" style="padding:4px 8px;border-radius:6px;border:none;font-size:14px;" title="文字サイズ">
+        <option value="16">標準</option>
+        <option value="18">大</option>
+        <option value="20">特大</option>
+      </select>
+      <span style="font-size:14px;">👤 山田 太郎</span>
+      <a href="login.html" style="background:#fff;color: #7B4B00;padding:6px 14px;border-radius:20px;text-decoration:none;font-size:14px;font-weight:bold;">ログアウト</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="breadcrumb" aria-label="パンくずリスト">
+      <a href="home.html">🏠 ホーム</a>
+      <span class="sep">›</span>
+      <span style="color:#333;">ユーザ管理</span>
+    </nav>
+    <h1 class="page-title">🟠 ユーザ管理</h1>
+    <div class="admin-badge">🔐 管理者専用画面</div>
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="number" style="color:#333;">24</div>
+        <div class="label">全ユーザー数</div>
+      </div>
+      <div class="summary-card">
+        <div class="number" style="color:#2e7d32;">21</div>
+        <div class="label">アクティブ</div>
+      </div>
+      <div class="summary-card">
+        <div class="number" style="color:#c62828;">3</div>
+        <div class="label">停止中</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" placeholder="ユーザーID・氏名で検索...">
+      <select aria-label="役割">
+        <option>すべての役割</option>
+        <option>管理者</option>
+        <option>一般</option>
+      </select>
+      <select aria-label="状態">
+        <option>すべての状態</option>
+        <option>アクティブ</option>
+        <option>停止中</option>
+      </select>
+      <button class="btn btn-primary">＋ 新規ユーザー追加</button>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>ユーザーID</th>
+            <th>氏名</th>
+            <th>メール</th>
+            <th>役割</th>
+            <th>状態</th>
+            <th>最終ログイン</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>yamada.taro</td>
+            <td>山田 太郎</td>
+            <td>yamada@example.com</td>
+            <td><span class="badge badge-blue">一般</span></td>
+            <td><span class="badge badge-green">アクティブ</span></td>
+            <td>2024-01-15</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+              <button class="btn btn-danger btn-sm">停止</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>sato.hanako</td>
+            <td>佐藤 花子</td>
+            <td>sato@example.com</td>
+            <td><span class="badge badge-blue">一般</span></td>
+            <td><span class="badge badge-green">アクティブ</span></td>
+            <td>2024-01-14</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+              <button class="btn btn-danger btn-sm">停止</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>tanaka.ichiro</td>
+            <td>田中 一郎</td>
+            <td>tanaka@example.com</td>
+            <td><span class="badge badge-red">管理者</span></td>
+            <td><span class="badge badge-green">アクティブ</span></td>
+            <td>2024-01-15</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+            </div></td>
+          </tr>
+          <tr class="tr-disabled">
+            <td>4</td>
+            <td>suzuki.jiro</td>
+            <td>鈴木 次郎</td>
+            <td>suzuki@example.com</td>
+            <td><span class="badge badge-gray">一般</span></td>
+            <td><span class="badge badge-gray">停止中</span></td>
+            <td>2023-12-20</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+              <button class="btn btn-primary btn-sm">有効化</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>ito.yuki</td>
+            <td>伊藤 雪</td>
+            <td>ito@example.com</td>
+            <td><span class="badge badge-blue">一般</span></td>
+            <td><span class="badge badge-green">アクティブ</span></td>
+            <td>2024-01-13</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+              <button class="btn btn-danger btn-sm">停止</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>nakamura.ken</td>
+            <td>中村 健</td>
+            <td>nakamura@example.com</td>
+            <td><span class="badge badge-blue">一般</span></td>
+            <td><span class="badge badge-green">アクティブ</span></td>
+            <td>2024-01-11</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+              <button class="btn btn-danger btn-sm">停止</button>
+            </div></td>
+          </tr>
+          <tr class="tr-disabled">
+            <td>7</td>
+            <td>kobayashi.m</td>
+            <td>小林 みどり</td>
+            <td>kobayashi@example.com</td>
+            <td><span class="badge badge-gray">一般</span></td>
+            <td><span class="badge badge-gray">停止中</span></td>
+            <td>2023-11-30</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+              <button class="btn btn-primary btn-sm">有効化</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>watanabe.r</td>
+            <td>渡辺 涼</td>
+            <td>watanabe@example.com</td>
+            <td><span class="badge badge-blue">一般</span></td>
+            <td><span class="badge badge-green">アクティブ</span></td>
+            <td>2024-01-10</td>
+            <td><div class="actions-cell">
+              <button class="btn btn-outline btn-sm">編集</button>
+              <button class="btn btn-danger btn-sm">停止</button>
+            </div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span class="active">1</span>
+      <a href="#">2</a>
+      <a href="#">3</a>
+      <a href="#">次 →</a>
+    </div>
+  </div>
+
+  <nav style="display:none;" id="bottom-nav" aria-label="ボトムナビゲーション">
+    <a href="home.html">🏠<span>ホーム</span></a>
+    <a href="books.html">🔍<span>図書検索</span></a>
+    <a href="dashboard.html">📖<span>貸出状況</span></a>
+    <a href="profile.html">👤<span>プロフィール</span></a>
+  </nav>
+
+  <script>
+    function changeFontSize(size) {
+      document.body.style.fontSize = size + 'px';
+      localStorage.setItem('fontSize', size);
+    }
+    window.addEventListener('DOMContentLoaded', function() {
+      var s = localStorage.getItem('fontSize');
+      if (s) { document.body.style.fontSize = s + 'px'; }
+    });
+  </script>
+</body>
+</html>
+
+
