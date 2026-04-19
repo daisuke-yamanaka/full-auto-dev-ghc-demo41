@@ -79,4 +79,21 @@ test.describe('図書一覧・詳細テスト', () => {
     // At least some books should show 貸出可能
     await expect(page.locator('text=貸出可能').first()).toBeVisible();
   });
+
+  test('INIT-001: 初期データが正しく登録されている（FR-026）', async ({ page }) => {
+    // Verify >= 10 books exist on the books page
+    await loginAsAdmin(page);
+    await page.goto('/books');
+    await page.waitForLoadState('networkidle');
+    const countText = await page.locator('div').filter({ hasText: /^全 \d+ 件$/ }).first().textContent();
+    const match = countText?.match(/全 (\d+) 件/);
+    const count = match ? parseInt(match[1]) : 0;
+    expect(count).toBeGreaterThanOrEqual(10);
+
+    // Verify user001 (general user) can log in and access the dashboard
+    await loginAsUser(page, 1);
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h2:has-text("ダッシュボード")')).toBeVisible();
+  });
 });

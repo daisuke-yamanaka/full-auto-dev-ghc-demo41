@@ -117,7 +117,7 @@ test.describe('図書管理テスト（管理者）', () => {
       const data = await res.json();
       return (data.books || [])[0];
     });
-    expect(bookData, 'No books available for optimistic lock test').toBeTruthy();
+    expect(bookData, 'No books available for optimistic lock test').not.toBeNull();
 
     // Navigate to edit page — form loads current version from API
     await page.goto(`/admin/books/${bookData.id}/edit`);

@@ -58,10 +58,8 @@ test.describe('プロフィールテスト', () => {
     await inputs.nth(2).fill('newpassword123');
     await page.click('button:has-text("変更する")');
 
-    // Error message should appear (backend returns auth error message)
-    await expect(page.locator('text=ユーザIDまたはパスワードが正しくありません').or(
-      page.locator('text=現在のパスワードが正しくありません')
-    )).toBeVisible();
+    // Backend throws BadCredentialsException → 401 with "ユーザIDまたはパスワードが正しくありません"
+    await expect(page.locator('text=ユーザIDまたはパスワードが正しくありません')).toBeVisible();
   });
 
   test('PROF-004: フォントサイズ設定を変更できる', async ({ page }) => {
