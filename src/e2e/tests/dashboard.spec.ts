@@ -128,8 +128,39 @@ test.describe('ダッシュボード・履歴テスト', () => {
   });
 
   test('DASH-004: 貸出履歴ページに貸出記録が表示される', async ({ page }) => {
-    // user001 has Java入門 loan from initial data
     await loginAsUser(page, 1);
+
+    // Ensure user001 has an active loan so 貸出中 status appears in history
+    const borrowed = await page.evaluate(async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return false;
+      // Check if already has active loan
+      const loansRes = await fetch('http://localhost:8082/api/me/loans?page=1&size=20', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (loansRes.ok) {
+        const ld = await loansRes.json();
+        if ((ld.loans || []).some((l: any) => l.status === 'ACTIVE')) return true;
+      }
+      // No active loan — borrow one
+      const booksRes = await fetch('http://localhost:8082/api/books?size=50&page=1', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!booksRes.ok) return false;
+      const booksData = await booksRes.json();
+      const available = (booksData.books || []).filter((b: any) => b.availableCopies > 0);
+      for (const book of available) {
+        const r = await fetch('http://localhost:8082/api/loans', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookId: book.id })
+        });
+        if (r.ok) return true;
+      }
+      return false;
+    });
+    if (!borrowed) throw new Error('Setup failed: could not ensure active loan for user001');
+
     await page.goto('/me/loans');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('h2:has-text("貸出履歴")')).toBeVisible();
@@ -137,9 +168,8 @@ test.describe('ダッシュボード・履歴テスト', () => {
     // Verify at least one loan item is visible with date info
     await expect(page.locator('text=貸出日').first()).toBeVisible({ timeout: 10000 });
 
-    // Verify status badge is visible (貸出中 / 返却済 / 延滞中)
-    const statusLabel = page.locator('text=貸出中').or(page.locator('text=返却済')).or(page.locator('text=延滞中'));
-    await expect(statusLabel.first()).toBeVisible({ timeout: 5000 });
+    // Verify status badge for active loan is visible
+    await expect(page.locator('text=貸出中')).toBeVisible({ timeout: 5000 });
   });
 
   test('DASH-005: ダッシュボードに返却期限が表示される（FR-015）', async ({ page }) => {
@@ -245,7 +275,7 @@ test.describe('ダッシュボード・履歴テスト', () => {
     const initRes = await page.request.get(`${h2Base}/h2-console/login.do`);
     const initHtml = await initRes.text();
     const jsessMatch = initHtml.match(/jsessionid=([a-f0-9]+)/);
-    expect(jsessMatch, 'H2 console did not return jsessionid').toBeTruthy();
+    expect(jsessMatch, 'H2 console did not return jsessionid').not.toBeNull();
     const h2Jsess = jsessMatch![1];
 
     await page.request.post(`${h2Base}/h2-console/login.do?jsessionid=${h2Jsess}`, {

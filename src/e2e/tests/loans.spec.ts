@@ -225,7 +225,7 @@ test.describe('貸出テスト', () => {
     const initRes = await page.request.get(`${h2Base}/h2-console/login.do`);
     const initHtml = await initRes.text();
     const jsessMatch = initHtml.match(/jsessionid=([a-f0-9]+)/);
-    expect(jsessMatch, 'H2 console did not return jsessionid').toBeTruthy();
+    expect(jsessMatch, 'H2 console did not return jsessionid').not.toBeNull();
     const h2Jsess = jsessMatch![1];
 
     // Step 2: Login to H2 console
