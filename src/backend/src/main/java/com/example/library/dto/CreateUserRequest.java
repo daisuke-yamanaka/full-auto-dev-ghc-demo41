@@ -15,6 +15,7 @@ public class CreateUserRequest {
     @NotBlank
     @Size(min = 1, max = 100)
     private String name;
+    @Pattern(regexp = "^(USER|ADMIN)$", message = "ロールはUSERまたはADMINを指定してください")
     private String role = "USER";
     @NotBlank
     @Size(min = 8, max = 100)

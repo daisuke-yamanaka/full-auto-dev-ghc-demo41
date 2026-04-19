@@ -54,6 +54,10 @@ public interface BookDao {
         """)
     int countSearch(String title, String author, String category, String isbn);
 
+    @Select
+    @Sql("SELECT * FROM books WHERE id IN /* ids */(0)")
+    List<Book> findByIds(java.util.List<Long> ids);
+
     @Insert
     int insert(Book book);
 

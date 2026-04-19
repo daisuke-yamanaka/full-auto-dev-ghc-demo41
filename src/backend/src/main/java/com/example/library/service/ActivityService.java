@@ -58,6 +58,7 @@ public class ActivityService {
             case "LOAN" -> "LOAN";
             case "RETURN" -> "RETURN";
             case "RESERVE" -> "RESERVATION";
+            case "CANCEL_RESERVE" -> "CANCEL_RESERVATION";
             default -> operationType;
         };
     }

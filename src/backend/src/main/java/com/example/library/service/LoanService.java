@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,8 +38,12 @@ public class LoanService {
         int activeCount = loanDao.countActiveByUserId(user.getId());
         boolean isOverdue = loanDao.countOverdueByUserId(user.getId()) > 0;
 
+        List<Long> bookIds = loans.stream().map(Loan::getBookId).distinct().collect(Collectors.toList());
+        Map<Long, Book> bookMap = bookIds.isEmpty() ? Collections.emptyMap() :
+            bookDao.findByIds(bookIds).stream().collect(Collectors.toMap(Book::getId, b -> b));
+
         List<LoanItem> items = loans.stream().map(loan -> {
-            Book book = bookDao.findById(loan.getBookId()).orElse(null);
+            Book book = bookMap.get(loan.getBookId());
             return toLoanItem(loan, book);
         }).collect(Collectors.toList());
 
@@ -147,6 +153,15 @@ public class LoanService {
                 loanDao.insert(autoLoan);
 
                 reservationDao.delete(reservation);
+
+                OperationLog autoLoanLog = new OperationLog();
+                autoLoanLog.setUserId(reservedUser.getId());
+                autoLoanLog.setOperationType("LOAN");
+                autoLoanLog.setTargetType("BOOK");
+                autoLoanLog.setTargetId(bookId.toString());
+                autoLoanLog.setDetail("自動貸出（予約連動）");
+                autoLoanLog.setCreatedAt(LocalDateTime.now());
+                operationLogDao.insert(autoLoanLog);
 
                 log.info("自動貸出: bookId={}, userId={}", bookId, reservedUser.getUserId());
                 break;

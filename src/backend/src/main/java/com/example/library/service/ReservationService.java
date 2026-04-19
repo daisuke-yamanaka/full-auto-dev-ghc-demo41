@@ -9,7 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,8 +34,12 @@ public class ReservationService {
         List<Reservation> reservations = reservationDao.findByUserId(user.getId(), size, offset);
         int total = reservationDao.countByUserId(user.getId());
 
+        List<Long> bookIds = reservations.stream().map(Reservation::getBookId).distinct().collect(Collectors.toList());
+        Map<Long, Book> bookMap = bookIds.isEmpty() ? Collections.emptyMap() :
+            bookDao.findByIds(bookIds).stream().collect(Collectors.toMap(Book::getId, b -> b));
+
         List<ReservationItem> items = reservations.stream().map(r -> {
-            Book book = bookDao.findById(r.getBookId()).orElse(null);
+            Book book = bookMap.get(r.getBookId());
             int queuePos = reservationDao.getQueuePosition(r.getBookId(), r.getId());
             return toReservationItem(r, book, queuePos);
         }).collect(Collectors.toList());
@@ -114,7 +120,18 @@ public class ReservationService {
             throw new OptimisticLockException("予約情報が更新されています。再読み込みしてください。");
         }
 
+        Book book = bookDao.findById(reservation.getBookId()).orElse(null);
         reservationDao.delete(reservation);
+
+        OperationLog opLog = new OperationLog();
+        opLog.setUserId(user.getId());
+        opLog.setOperationType("CANCEL_RESERVE");
+        opLog.setTargetType("BOOK");
+        opLog.setTargetId(reservation.getBookId().toString());
+        opLog.setDetail(book != null ? book.getTitle() : "");
+        opLog.setCreatedAt(LocalDateTime.now());
+        operationLogDao.insert(opLog);
+
         log.info("予約キャンセル: id={}, userId={}", reservationId, userId);
     }
 

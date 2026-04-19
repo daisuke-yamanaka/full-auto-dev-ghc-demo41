@@ -16,6 +16,7 @@ public class UpdateUserRequest {
     @Size(min = 1, max = 100)
     private String name;
     @NotBlank
+    @Pattern(regexp = "^(USER|ADMIN)$", message = "ロールはUSERまたはADMINを指定してください")
     private String role;
     @NotNull
     private Long version;
