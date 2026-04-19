@@ -802,31 +802,31 @@
 | FR-001 | ログイン機能 | SCR-001 | POST /api/auth/login | TC-001, TC-002, TC-003 |
 | FR-002 | ログアウト機能 | SCR-002〜SCR-012（共通） | POST /api/auth/logout | TC-004 |
 | FR-003 | セッション管理 | 全画面 | （フィルタ処理） | TC-005, TC-006 |
-| FR-004 | プロフィール編集機能 | SCR-009 | GET /api/users/me, PUT /api/users/me | TC-007, TC-008 |
-| FR-005 | パスワード変更機能 | SCR-010 | PUT /api/users/me/password | TC-009, TC-010, TC-011 |
-| FR-006 | フォントサイズ切り替え機能 | SCR-009 | PUT /api/users/me/settings | TC-012 |
+| FR-004 | プロフィール編集機能 | SCR-009 | GET /api/me/profile, PUT /api/me/profile | TC-007, TC-008 |
+| FR-005 | パスワード変更機能 | SCR-010 | PUT /api/me/password | TC-009, TC-010, TC-011 |
+| FR-006 | フォントサイズ切り替え機能 | SCR-009 | PUT /api/me/settings | TC-012 |
 | FR-007 | 図書検索・一覧表示機能 | SCR-004 | GET /api/books | TC-013, TC-014, TC-015 |
 | FR-008 | 図書詳細表示機能 | SCR-005 | GET /api/books/{id} | TC-016, TC-017 |
-| FR-009 | 図書登録機能（管理者） | SCR-006 | POST /api/books | TC-018, TC-019, TC-020 |
-| FR-010 | 図書編集機能（管理者） | SCR-006 | PUT /api/books/{id} | TC-021, TC-022 |
-| FR-011 | 図書削除機能（管理者） | SCR-012 | DELETE /api/books/{id} | TC-023, TC-024 |
+| FR-009 | 図書登録機能（管理者） | SCR-006 | POST /api/admin/books | TC-018, TC-019, TC-020 |
+| FR-010 | 図書編集機能（管理者） | SCR-006 | PUT /api/admin/books/{id} | TC-021, TC-022 |
+| FR-011 | 図書削除機能（管理者） | SCR-012 | DELETE /api/admin/books/{id} | TC-023, TC-024 |
 | FR-012 | 図書貸出機能 | SCR-005 | POST /api/loans | TC-025, TC-026, TC-027, TC-028 |
 | FR-013 | 図書返却機能 | SCR-003, SCR-007 | PUT /api/loans/{id}/return | TC-029, TC-030 |
 | FR-014 | 貸出上限制御 | SCR-005, SCR-003 | POST /api/loans（バリデーション） | TC-031 |
-| FR-015 | 貸出期限・延滞警告表示 | SCR-003 | GET /api/loans/my | TC-032, TC-033 |
+| FR-015 | 貸出期限・延滞警告表示 | SCR-003 | GET /api/me/loans | TC-032, TC-033 |
 | FR-016 | 延滞ユーザの貸出制限 | SCR-005 | POST /api/loans（バリデーション） | TC-034, TC-035 |
 | FR-017 | 予約機能 | SCR-005 | POST /api/reservations | TC-036, TC-037, TC-038 |
 | FR-018 | 返却時の自動貸出（予約連動） | SCR-003, SCR-007 | PUT /api/loans/{id}/return（内部処理） | TC-039, TC-040 |
-| FR-019 | 貸出履歴確認機能 | SCR-007 | GET /api/loans/my | TC-041, TC-042 |
-| FR-020 | ダッシュボード機能 | SCR-003 | GET /api/loans/my | TC-043, TC-044 |
-| FR-021 | アクティビティフィード機能 | SCR-002 | GET /api/activities | TC-045, TC-046 |
-| FR-022 | ユーザ登録機能（管理者） | SCR-011 | POST /api/users | TC-047, TC-048, TC-049 |
-| FR-023 | ユーザ編集機能（管理者） | SCR-011 | PUT /api/users/{id} | TC-050, TC-051 |
-| FR-024 | ユーザ削除機能（管理者） | SCR-011 | DELETE /api/users/{id} | TC-052, TC-053 |
-| FR-025 | 管理者によるパスワード再設定 | SCR-011 | PUT /api/users/{id}/password | TC-054 |
+| FR-019 | 貸出履歴確認機能 | SCR-007 | GET /api/me/loans | TC-041, TC-042 |
+| FR-020 | ダッシュボード機能 | SCR-003 | GET /api/me/loans | TC-043, TC-044 |
+| FR-021 | アクティビティフィード機能 | SCR-002 | GET /api/me/activities | TC-045, TC-046 |
+| FR-022 | ユーザ登録機能（管理者） | SCR-011 | POST /api/admin/users | TC-047, TC-048, TC-049 |
+| FR-023 | ユーザ編集機能（管理者） | SCR-011 | PUT /api/admin/users/{id} | TC-050, TC-051 |
+| FR-024 | ユーザ削除機能（管理者） | SCR-011 | DELETE /api/admin/users/{id} | TC-052, TC-053 |
+| FR-025 | 管理者によるパスワード再設定 | SCR-011 | PUT /api/admin/users/{id}/password | TC-054 |
 | FR-026 | 初期データ投入機能 | （起動時） | （Data Initializer） | TC-055 |
 | FR-027 | ページネーション機能 | SCR-004, SCR-007, SCR-008, SCR-011, SCR-012 | 各一覧API（?page=&size=） | TC-056, TC-057 |
 | FR-028 | 楽観的排他制御機能 | 各更新画面 | 各更新API（versionフィールド） | TC-058, TC-059 |
 | FR-029 | 操作ログ記録機能 | （全画面：システムレベル） | （AOP/フィルタ） | TC-060, TC-061 |
 | FR-030 | レスポンシブデザイン | 全画面 | — | TC-062 |
-| FR-031 | 予約一覧・予約キャンセル機能 | SCR-008 | GET /api/reservations/my, DELETE /api/reservations/{id} | TC-063, TC-064, TC-065 |
+| FR-031 | 予約一覧・予約キャンセル機能 | SCR-008 | GET /api/me/reservations, DELETE /api/reservations/{id} | TC-063, TC-064, TC-065 |
