@@ -168,6 +168,24 @@ paths:
       operationId: getMyLoans
       tags:
         - Me
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: ページ番号
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 1ページあたりの件数
       responses:
         '200':
           description: 貸出情報取得成功
@@ -981,6 +999,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LoanItem'
+        total:
+          type: integer
+          description: 総件数
+          example: 10
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
 
     ReservationItem:
       type: object
@@ -1374,6 +1404,9 @@ components:
         - title
         - author
         - isbn
+        - publisher
+        - publishedYear
+        - category
         - totalCopies
       properties:
         title:
@@ -1421,6 +1454,9 @@ components:
         - title
         - author
         - isbn
+        - publisher
+        - publishedYear
+        - category
         - totalCopies
         - version
       properties:

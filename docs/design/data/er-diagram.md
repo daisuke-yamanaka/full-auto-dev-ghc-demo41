@@ -59,10 +59,18 @@ erDiagram
         VARCHAR(45) ip_address
         TIMESTAMP created_at
     }
+    user_sessions {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR(255) token_hash UK
+        TIMESTAMP created_at
+        TIMESTAMP expires_at
+    }
     users ||--o{ loans : "borrows"
     users ||--o{ reservations : "reserves"
     books ||--o{ loans : "is loaned"
     books ||--o{ reservations : "is reserved"
+    users ||--o{ user_sessions : "has session"
 ```
 
 ## テーブル説明
@@ -149,6 +157,7 @@ erDiagram
 | users → reservations | 1:N | 1ユーザが複数の予約を持てる |
 | books → loans | 1:N | 1図書（タイトル）が複数の貸出を持てる（複数蔵書） |
 | books → reservations | 1:N | 1図書に対して複数の予約が存在できる |
+| users → user_sessions | 1:N | 1ユーザが有効なセッションを持てる（多重ログイン防止により通常1件） |
 
 ## 設計上の補足
 

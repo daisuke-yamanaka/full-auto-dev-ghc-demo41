@@ -259,9 +259,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class) // → 400
     @ExceptionHandler(ConstraintViolationException.class)   // → 400
     @ExceptionHandler(AuthenticationException.class)         // → 401
+    @ExceptionHandler(JwtException.class)                    // → 401
     @ExceptionHandler(AccessDeniedException.class)           // → 403
     @ExceptionHandler(ResourceNotFoundException.class)       // → 404
     @ExceptionHandler(OptimisticLockException.class)         // → 409
+    @ExceptionHandler(BusinessLogicException.class)          // → 409
     @ExceptionHandler(Exception.class)                       // → 500
 }
 ```
