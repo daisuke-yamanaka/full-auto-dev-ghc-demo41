@@ -46,7 +46,7 @@ export default function PasswordChangePage() {
     } catch (err) {
       const axiosErr = err as AxiosError<ErrorResponse>;
       console.error('[Password] change error', axiosErr);
-      if (axiosErr.response?.status === 400) {
+      if (axiosErr.response?.status === 400 || axiosErr.response?.status === 401) {
         setApiError(axiosErr.response.data?.message || '現在のパスワードが正しくありません');
       } else {
         setApiError('パスワード変更に失敗しました');

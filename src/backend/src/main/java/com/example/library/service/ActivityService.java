@@ -7,6 +7,8 @@ import com.example.library.domain.OperationLog;
 import com.example.library.domain.User;
 import com.example.library.dto.ActivitiesResponse;
 import com.example.library.dto.ActivityItem;
+import com.example.library.dto.OperationLogItem;
+import com.example.library.dto.OperationLogsResponse;
 import com.example.library.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,36 @@ public class ActivityService {
     private final OperationLogDao operationLogDao;
     private final UserDao userDao;
     private final BookDao bookDao;
+
+    @Transactional(readOnly = true)
+    public OperationLogsResponse getOperationLogs(int page, int size) {
+        int offset = (page - 1) * size;
+        List<OperationLog> logs = operationLogDao.findAll(size, offset);
+        long total = operationLogDao.countAll();
+
+        List<OperationLogItem> items = logs.stream().map(log -> {
+            OperationLogItem item = new OperationLogItem();
+            item.setId(log.getId());
+            item.setOperationType(log.getOperationType());
+            item.setUserId(log.getUserId());
+            item.setTargetType(log.getTargetType());
+            item.setTargetId(log.getTargetId());
+            item.setDetail(log.getDetail());
+            item.setCreatedAt(log.getCreatedAt());
+            userDao.findById(log.getUserId()).ifPresent(user -> {
+                item.setUserLoginId(user.getUserId());
+                item.setUserName(user.getName());
+            });
+            return item;
+        }).collect(Collectors.toList());
+
+        OperationLogsResponse response = new OperationLogsResponse();
+        response.setLogs(items);
+        response.setTotal(total);
+        response.setPage(page);
+        response.setSize(size);
+        return response;
+    }
 
     @Transactional(readOnly = true)
     public ActivitiesResponse getMyActivities(String userId) {
