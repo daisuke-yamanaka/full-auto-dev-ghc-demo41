@@ -42,7 +42,9 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
         userDao.update(user);
 
-        return toProfileResponse(userDao.findByUserId(userId).get());
+        log.info("プロフィール更新: userId={}, operator={}", userId, userId);
+        return toProfileResponse(userDao.findByUserId(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found")));
     }
 
     @Transactional
@@ -77,7 +79,9 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
         userDao.update(user);
 
-        User updated = userDao.findByUserId(userId).get();
+        log.info("設定更新: userId={}, fontSize={}", userId, request.getFontSize());
+        User updated = userDao.findByUserId(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return new SettingsResponse(updated.getId(), updated.getFontSize(), updated.getVersion());
     }
 
@@ -117,7 +121,9 @@ public class UserService {
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
 
-        var result = userDao.insert(user);
+        userDao.insert(user);
+        String operator = getOperatorId();
+        log.info("ユーザ登録: userId={}, operator={}", request.getUserId(), operator);
         return toAdminUserResponse(user);
     }
 
@@ -144,7 +150,10 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now());
         userDao.update(user);
 
-        return toAdminUserResponse(userDao.findById(id).get());
+        String operator = getOperatorId();
+        log.info("ユーザ更新: id={}, operator={}", id, operator);
+        return toAdminUserResponse(userDao.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found: " + id)));
     }
 
     @Transactional
@@ -157,7 +166,8 @@ public class UserService {
         }
 
         userDao.delete(user);
-        log.info("ユーザ削除: id={}", id);
+        String operator = getOperatorId();
+        log.info("ユーザ削除: id={}, operator={}", id, operator);
     }
 
     @Transactional
@@ -168,7 +178,14 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setUpdatedAt(LocalDateTime.now());
         userDao.update(user);
-        log.info("パスワードリセット: id={}", id);
+        String operator = getOperatorId();
+        log.info("パスワードリセット: id={}, operator={}", id, operator);
+    }
+
+    private String getOperatorId() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+            .getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
     }
 
     private ProfileResponse toProfileResponse(User user) {
@@ -194,7 +211,6 @@ public class UserService {
         r.setEmail(user.getEmail());
         r.setName(user.getName());
         r.setRole(user.getRole());
-        r.setFontSize(user.getFontSize());
         r.setVersion(user.getVersion());
         return r;
     }

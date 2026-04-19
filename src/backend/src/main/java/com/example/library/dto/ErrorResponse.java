@@ -2,12 +2,14 @@ package com.example.library.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
+import java.util.List;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class ErrorResponse {
-    private String error;
+    private String code;
     private String message;
-    private LocalDateTime timestamp;
+    private List<String> details;
 }

@@ -1,8 +1,10 @@
 package com.example.library.config;
 
 import com.example.library.dao.BookDao;
+import com.example.library.dao.LoanDao;
 import com.example.library.dao.UserDao;
 import com.example.library.domain.Book;
+import com.example.library.domain.Loan;
 import com.example.library.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +13,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * 開発環境用初期データ投入。
+ * パスワードは開発専用デフォルト値。本番環境では使用しないこと。
+ */
 @Component
 @Profile("dev")
 @RequiredArgsConstructor
@@ -21,6 +28,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private final UserDao userDao;
     private final BookDao bookDao;
+    private final LoanDao loanDao;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
@@ -31,32 +39,24 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        User admin = new User();
-        admin.setUserId("admin");
-        admin.setEmail("admin@example.com");
-        admin.setName("管理者");
-        admin.setPasswordHash(passwordEncoder.encode("admin123"));
-        admin.setRole("ADMIN");
-        admin.setFontSize("NORMAL");
-        admin.setVersion(0L);
-        admin.setCreatedAt(LocalDateTime.now());
-        admin.setUpdatedAt(LocalDateTime.now());
+        // 管理者ユーザ
+        User admin = createUser("admin", "admin@example.com", "管理者", "ADMIN",
+            passwordEncoder.encode("admin123"));
         userDao.insert(admin);
 
+        // 一般ユーザ5名
+        User[] regularUsers = new User[5];
         for (int i = 1; i <= 5; i++) {
-            User user = new User();
-            user.setUserId("user" + String.format("%03d", i));
-            user.setEmail("user" + String.format("%03d", i) + "@example.com");
-            user.setName("ユーザ" + i);
-            user.setPasswordHash(passwordEncoder.encode("password" + i));
-            user.setRole("USER");
-            user.setFontSize("NORMAL");
-            user.setVersion(0L);
-            user.setCreatedAt(LocalDateTime.now());
-            user.setUpdatedAt(LocalDateTime.now());
-            userDao.insert(user);
+            regularUsers[i - 1] = createUser(
+                "user" + String.format("%03d", i),
+                "user" + String.format("%03d", i) + "@example.com",
+                "ユーザ" + i,
+                "USER",
+                passwordEncoder.encode("password" + i));
+            userDao.insert(regularUsers[i - 1]);
         }
 
+        // 図書10冊以上
         String[][] bookData = {
             {"Java入門", "山田太郎", "9784123456789", "技術出版社", "2020", "プログラミング", "3"},
             {"Spring Boot実践", "田中花子", "9784234567890", "Java書房", "2021", "プログラミング", "2"},
@@ -70,7 +70,9 @@ public class DataInitializer implements CommandLineRunner {
             {"マイクロサービス設計", "吉田八郎", "9784012345678", "アーキテクチャ出版", "2022", "ソフトウェア設計", "1"}
         };
 
-        for (String[] data : bookData) {
+        Book[] books = new Book[bookData.length];
+        for (int i = 0; i < bookData.length; i++) {
+            String[] data = bookData[i];
             Book book = new Book();
             book.setTitle(data[0]);
             book.setAuthor(data[1]);
@@ -83,8 +85,34 @@ public class DataInitializer implements CommandLineRunner {
             book.setCreatedAt(LocalDateTime.now());
             book.setUpdatedAt(LocalDateTime.now());
             bookDao.insert(book);
+            books[i] = book;
         }
 
+        // 貸出中データ（user001が「Java入門」を貸出中）
+        Loan activeLoan = new Loan();
+        activeLoan.setUserId(regularUsers[0].getId());
+        activeLoan.setBookId(books[0].getId());
+        activeLoan.setLoanedAt(LocalDateTime.now().minusDays(3));
+        activeLoan.setDueDate(LocalDate.now().plusDays(4));
+        activeLoan.setVersion(0L);
+        activeLoan.setCreatedAt(LocalDateTime.now().minusDays(3));
+        activeLoan.setUpdatedAt(LocalDateTime.now().minusDays(3));
+        loanDao.insert(activeLoan);
+
         log.info("初期データを作成しました");
+    }
+
+    private User createUser(String userId, String email, String name, String role, String passwordHash) {
+        User user = new User();
+        user.setUserId(userId);
+        user.setEmail(email);
+        user.setName(name);
+        user.setPasswordHash(passwordHash);
+        user.setRole(role);
+        user.setFontSize("NORMAL");
+        user.setVersion(0L);
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        return user;
     }
 }

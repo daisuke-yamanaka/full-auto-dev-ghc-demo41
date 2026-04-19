@@ -164,8 +164,10 @@ public class LoanService {
 
         log.info("図書返却: loanId={}, operator={}", loanId, operatorUserId);
 
-        Book book = bookDao.findById(bookId).get();
-        Loan updated = loanDao.findById(loanId).get();
+        Book book = bookDao.findById(bookId)
+            .orElseThrow(() -> new ResourceNotFoundException("Book not found: " + bookId));
+        Loan updated = loanDao.findById(loanId)
+            .orElseThrow(() -> new ResourceNotFoundException("Loan not found: " + loanId));
 
         ReturnLoanResponse response = new ReturnLoanResponse();
         response.setId(updated.getId());

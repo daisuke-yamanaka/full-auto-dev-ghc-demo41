@@ -114,7 +114,10 @@ public class BookService {
         book.setVersion(0L);
         book.setCreatedAt(LocalDateTime.now());
         book.setUpdatedAt(LocalDateTime.now());
-        var result = bookDao.insert(book);
+        bookDao.insert(book);
+
+        String operator = getOperatorId();
+        log.info("図書登録: isbn={}, bookId={}, operator={}", request.getIsbn(), book.getId(), operator);
         return toAdminBookResponse(book, book.getTotalCopies());
     }
 
@@ -137,7 +140,10 @@ public class BookService {
         book.setUpdatedAt(LocalDateTime.now());
         bookDao.update(book);
 
-        Book updated = bookDao.findById(id).get();
+        String operator = getOperatorId();
+        log.info("図書更新: bookId={}, operator={}", id, operator);
+        Book updated = bookDao.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Book not found: " + id));
         int activeLoanCount = loanDao.countActiveByBookId(id);
         int availableCopies = Math.max(0, updated.getTotalCopies() - activeLoanCount);
         return toAdminBookResponse(updated, availableCopies);
@@ -158,7 +164,14 @@ public class BookService {
         }
 
         bookDao.delete(book);
-        log.info("図書削除: id={}", id);
+        String operator = getOperatorId();
+        log.info("図書削除: bookId={}, operator={}", id, operator);
+    }
+
+    private String getOperatorId() {
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+            .getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
     }
 
     private BookSummary toBookSummary(Book book) {

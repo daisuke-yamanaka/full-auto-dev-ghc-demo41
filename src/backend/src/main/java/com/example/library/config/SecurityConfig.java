@@ -28,9 +28,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // REST APIのためCSRF保護は無効化。JWT Bearer Tokenによるステートレス認証で代替する。
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionManagement(session -> session
+                // JWTステートレス認証のためサーバサイドセッションは作成しない
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                // セッション固定攻撃対策（JWT利用のためサーバセッションは実質無効だが、明示的に設定）
+                .sessionFixation(fixation -> fixation.migrateSession())
+                // 多重ログイン防止（JWTではDBのuser_sessionsテーブルで管理）
+                .sessionConcurrency(concurrency -> concurrency.maximumSessions(1))
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
@@ -48,7 +56,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
