@@ -1,6 +1,7 @@
 package com.example.library.controller;
 
 import com.example.library.dto.*;
+import com.example.library.service.ActivityService;
 import com.example.library.service.BookService;
 import com.example.library.service.UserService;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ public class AdminController {
 
     private final BookService bookService;
     private final UserService userService;
+    private final ActivityService activityService;
 
     @PostMapping("/books")
     public ResponseEntity<AdminBookResponse> createBook(@Valid @RequestBody CreateBookRequest request) {
@@ -61,5 +63,12 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> resetUserPassword(@PathVariable Long id, @Valid @RequestBody AdminResetPasswordRequest request) {
         userService.resetPassword(id, request.getNewPassword());
         return ResponseEntity.ok(Map.of("message", "パスワードをリセットしました"));
+    }
+
+    @GetMapping("/logs")
+    public ResponseEntity<OperationLogsResponse> getOperationLogs(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(activityService.getOperationLogs(page, size));
     }
 }
