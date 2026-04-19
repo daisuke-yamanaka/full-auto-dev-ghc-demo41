@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>貸出履歴 - LibraryMS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #0078d4; --primary-dark: #005a9e; --primary-light: #deecf9;
+      --sidebar-bg: #f3f2f1; --sidebar-width: 240px; --sidebar-mini: 60px;
+      --header-height: 56px; --text-primary: #323130; --text-secondary: #605e5c;
+      --border-color: #edebe9; --success: #107c10; --warning: #d83b01;
+      --danger: #a4262c; --white: #ffffff;
+    }
+    body { font-family: 'Segoe UI','Meiryo',sans-serif; background: #faf9f8; color: var(--text-primary); min-height: 100vh; }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--primary); color: var(--white); display: flex; align-items: center; padding: 0 16px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.15); gap: 8px; }
+    .hamburger-btn { background: none; border: none; color: var(--white); cursor: pointer; font-size: 20px; padding: 8px; border-radius: 4px; line-height: 1; display: none; }
+    .app-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--white); font-size: 18px; font-weight: 700; }
+    .header-spacer { flex: 1; }
+    .font-size-controls { display: flex; align-items: center; gap: 4px; }
+    .font-size-controls span { font-size: 12px; opacity: 0.85; margin-right: 4px; }
+    .font-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: var(--white); cursor: pointer; border-radius: 3px; padding: 3px 8px; font-size: 11px; font-weight: 600; }
+    .font-btn.active { background: rgba(255,255,255,0.30); }
+    .header-icon-btn { position: relative; background: none; border: none; color: var(--white); cursor: pointer; font-size: 18px; padding: 8px; border-radius: 4px; }
+    .header-icon-btn:hover { background: rgba(255,255,255,0.15); }
+    .notif-badge { position: absolute; top: 4px; right: 4px; background: #d83b01; color: #fff; font-size: 10px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 0 3px; }
+    .user-menu-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--white); cursor: pointer; padding: 6px 10px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+    .dropdown { position: relative; }
+    .dropdown-menu { position: absolute; top: calc(100% + 4px); right: 0; background: var(--white); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 180px; z-index: 2000; display: none; }
+    .dropdown-menu.open { display: block; }
+    .dropdown-menu a { display: block; padding: 10px 16px; color: var(--text-primary); text-decoration: none; font-size: 13px; }
+    .dropdown-menu a:hover { background: var(--primary-light); }
+    .dropdown-divider { border: none; border-top: 1px solid var(--border-color); margin: 4px 0; }
+    .notif-dropdown { min-width: 300px; }
+    .notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 13px; }
+    .notif-item { padding: 10px 16px; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+    .notif-item.unread { background: var(--primary-light); }
+    .notif-time { color: var(--text-secondary); font-size: 11px; }
+    .sidebar { position: fixed; top: var(--header-height); left: 0; bottom: 0; width: var(--sidebar-width); background: var(--sidebar-bg); border-right: 1px solid var(--border-color); overflow-y: auto; overflow-x: hidden; transition: width 0.2s, transform 0.2s; z-index: 900; }
+    .sidebar-nav { padding: 8px 0; }
+    .nav-section-title { font-size: 11px; font-weight: 600; color: var(--text-secondary); padding: 16px 16px 4px; text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: var(--text-primary); text-decoration: none; font-size: 13px; font-weight: 500; transition: background 0.15s; white-space: nowrap; }
+    .nav-item:hover { background: #e8e6e4; }
+    .nav-item[aria-current="page"] { background: var(--primary-light); color: var(--primary); border-left: 3px solid var(--primary); }
+    .nav-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+    .nav-divider { border: none; border-top: 1px solid var(--border-color); margin: 8px 0; }
+    .nav-admin-label { font-size: 11px; color: var(--text-secondary); padding: 8px 16px 4px; display: flex; align-items: center; gap: 6px; }
+    .nav-admin-label::before, .nav-admin-label::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+    .main-content { margin-left: var(--sidebar-width); margin-top: var(--header-height); padding: 24px; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 850; }
+    .overlay.open { display: block; }
+    .page-header { margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; }
+    .page-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+    /* Filter area */
+    .filter-area { background: var(--white); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .filter-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+    .filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .filter-tab { padding: 6px 14px; border: 1px solid var(--border-color); border-radius: 20px; background: var(--white); color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+    .filter-tab:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+    .filter-tab.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+    /* Card */
+    .card { background: var(--white); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+    .card-header { padding: 14px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 14px; font-weight: 700; }
+    .result-count { font-size: 13px; color: var(--text-secondary); }
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { background: #f8f7f6; padding: 10px 16px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 12px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+    .data-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: #faf9f8; }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-success { background: #dff6dd; color: var(--success); }
+    .badge-danger { background: #fde7e9; color: var(--danger); }
+    .badge-info { background: var(--primary-light); color: var(--primary); }
+    .badge-gray { background: #f3f2f1; color: var(--text-secondary); }
+    .book-link { color: var(--primary); text-decoration: none; font-weight: 600; }
+    .book-link:hover { text-decoration: underline; }
+    /* Pagination */
+    .pagination { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-color); }
+    .page-info { font-size: 13px; color: var(--text-secondary); }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn { width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--white); color: var(--text-primary); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .page-btn:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+    .page-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+    .app-footer { margin-left: var(--sidebar-width); padding: 16px 24px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border-color); text-align: center; }
+    @media (max-width: 1023px) and (min-width: 768px) {
+      .sidebar { width: var(--sidebar-mini); }
+      .nav-label, .nav-section-title, .nav-admin-label { display: none; }
+      .nav-item { padding: 12px; justify-content: center; }
+      .nav-icon { width: auto; font-size: 18px; }
+      .main-content { margin-left: var(--sidebar-mini); }
+      .app-footer { margin-left: var(--sidebar-mini); }
+    }
+    @media (max-width: 767px) {
+      .hamburger-btn { display: block; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 16px; }
+      .app-footer { margin-left: 0; }
+      .font-size-controls span { display: none; }
+      .data-table { display: block; overflow-x: auto; }
+    }
+    a:focus, button:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<header class="app-header" role="banner">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く" aria-expanded="false">☰</button>
+  <a href="./dashboard.html" class="app-logo"><span>📚</span> LibraryMS</a>
+  <div class="header-spacer"></div>
+  <div class="font-size-controls" role="group" aria-label="文字サイズ切り替え">
+    <span>文字サイズ:</span>
+    <button class="font-btn active" data-size="14">標準</button>
+    <button class="font-btn" data-size="16">大</button>
+    <button class="font-btn" data-size="18">特大</button>
+  </div>
+  <div class="dropdown">
+    <button class="header-icon-btn" id="notifBtn" aria-label="通知（2件）" aria-expanded="false">🔔<span class="notif-badge">2</span></button>
+    <div class="dropdown-menu notif-dropdown" id="notifMenu">
+      <div class="notif-header">通知</div>
+      <div class="notif-item unread"><div>「Clean Code」の返却期限を過ぎています</div><div class="notif-time">2024/06/01</div></div>
+      <div class="notif-item unread"><div>「Clean Architecture」が利用可能になりました</div><div class="notif-time">2024/06/05</div></div>
+    </div>
+  </div>
+  <div class="dropdown">
+    <button class="user-menu-btn" id="userMenuBtn" aria-expanded="false"><div class="user-avatar">山</div>山田 太郎 ▾</button>
+    <div class="dropdown-menu" id="userMenu">
+      <a href="./profile.html">👤 プロフィール</a><a href="./password.html">🔑 パスワード変更</a>
+      <hr class="dropdown-divider"><a href="./login.html">🚪 ログアウト</a>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="メインナビゲーション">
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">メニュー</div>
+    <a href="./dashboard.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">ダッシュボード</span></a>
+    <a href="./activity.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">アクティビティ</span></a>
+    <a href="./books.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-label">図書一覧・検索</span></a>
+    <a href="./loan-history.html" class="nav-item" aria-current="page"><span class="nav-icon">📖</span><span class="nav-label">貸出履歴</span></a>
+    <a href="./reservations.html" class="nav-item"><span class="nav-icon">🔖</span><span class="nav-label">予約一覧</span></a>
+    <a href="./profile.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">プロフィール</span></a>
+    <a href="./password.html" class="nav-item"><span class="nav-icon">🔑</span><span class="nav-label">パスワード変更</span></a>
+    <!-- 管理者のみ表示 -->
+    <hr class="nav-divider">
+    <div class="nav-admin-label">管理者のみ</div>
+    <a href="./book-management.html" class="nav-item"><span class="nav-icon">📗</span><span class="nav-label">図書管理</span></a>
+    <a href="./user-management.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-label">ユーザ管理</span></a>
+  </nav>
+</aside>
+<div class="overlay" id="overlay"></div>
+
+<main class="main-content" role="main">
+  <div class="page-header">
+    <h1 class="page-title">📖 貸出履歴</h1>
+    <p class="page-subtitle">山田 太郎 さんの貸出・返却履歴</p>
+  </div>
+
+  <div class="filter-area">
+    <span class="filter-label">絞り込み:</span>
+    <div class="filter-tabs" role="group" aria-label="ステータスフィルター">
+      <button class="filter-tab active" data-filter="all">すべて (12)</button>
+      <button class="filter-tab" data-filter="active">貸出中 (3)</button>
+      <button class="filter-tab" data-filter="returned">返却済み (8)</button>
+      <button class="filter-tab" data-filter="overdue">延滞中 (1)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">貸出履歴一覧</h2>
+      <span class="result-count">全12件</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" aria-label="貸出履歴一覧" id="loanTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>書名</th>
+            <th>著者</th>
+            <th>貸出日</th>
+            <th>返却期限</th>
+            <th>返却日</th>
+            <th>ステータス</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-status="overdue">
+            <td>1</td>
+            <td><a href="./book-detail.html" class="book-link">Clean Code</a></td>
+            <td>Robert C. Martin</td>
+            <td>2024/05/15</td>
+            <td style="color:var(--danger);font-weight:600">2024/05/29</td>
+            <td>—</td>
+            <td><span class="badge badge-danger">延滞中</span></td>
+          </tr>
+          <tr data-status="active">
+            <td>2</td>
+            <td><a href="./book-detail.html" class="book-link">リーダブルコード</a></td>
+            <td>Dustin Boswell</td>
+            <td>2024/05/20</td>
+            <td>2024/06/03</td>
+            <td>—</td>
+            <td><span class="badge badge-info">貸出中</span></td>
+          </tr>
+          <tr data-status="active">
+            <td>3</td>
+            <td><a href="./book-detail.html" class="book-link">ドメイン駆動設計</a></td>
+            <td>Eric Evans</td>
+            <td>2024/05/22</td>
+            <td>2024/06/05</td>
+            <td>—</td>
+            <td><span class="badge badge-info">貸出中</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>4</td>
+            <td><a href="./book-detail.html" class="book-link">Design Patterns</a></td>
+            <td>Gang of Four</td>
+            <td>2024/05/05</td>
+            <td>2024/05/19</td>
+            <td>2024/06/03</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>5</td>
+            <td><a href="./book-detail.html" class="book-link">プログラミングRust</a></td>
+            <td>Jim Blandy</td>
+            <td>2024/04/28</td>
+            <td>2024/05/12</td>
+            <td>2024/05/28</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>6</td>
+            <td><a href="./book-detail.html" class="book-link">人月の神話</a></td>
+            <td>Frederick P. Brooks Jr.</td>
+            <td>2024/04/15</td>
+            <td>2024/04/29</td>
+            <td>2024/05/18</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>7</td>
+            <td><a href="./book-detail.html" class="book-link">達人プログラマー</a></td>
+            <td>Andrew Hunt</td>
+            <td>2024/04/01</td>
+            <td>2024/04/15</td>
+            <td>2024/04/10</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>8</td>
+            <td><a href="./book-detail.html" class="book-link">SOFT SKILLS</a></td>
+            <td>John Sonmez</td>
+            <td>2024/03/20</td>
+            <td>2024/04/03</td>
+            <td>2024/04/02</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>9</td>
+            <td><a href="./book-detail.html" class="book-link">UNIXという考え方</a></td>
+            <td>Mike Gancarz</td>
+            <td>2024/03/05</td>
+            <td>2024/03/19</td>
+            <td>2024/03/18</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>10</td>
+            <td><a href="./book-detail.html" class="book-link">Clean Architecture</a></td>
+            <td>Robert C. Martin</td>
+            <td>2024/02/20</td>
+            <td>2024/03/05</td>
+            <td>2024/03/04</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="returned">
+            <td>11</td>
+            <td><a href="./book-detail.html" class="book-link">Effective Java</a></td>
+            <td>Joshua Bloch</td>
+            <td>2024/02/05</td>
+            <td>2024/02/19</td>
+            <td>2024/02/15</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+          <tr data-status="active">
+            <td>12</td>
+            <td><a href="./book-detail.html" class="book-link">ピープルウェア</a></td>
+            <td>Tom DeMarco</td>
+            <td>2024/01/15</td>
+            <td>2024/01/29</td>
+            <td>2024/01/28</td>
+            <td><span class="badge badge-success">返却済み</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span class="page-info">1–12 / 12件</span>
+      <div class="page-btns">
+        <button class="page-btn" aria-label="前のページ">‹</button>
+        <button class="page-btn active" aria-current="page">1</button>
+        <button class="page-btn" aria-label="次のページ">›</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="app-footer" role="contentinfo">© 2024 LibraryMS — 図書管理システム</footer>
+
+<script>
+  const hamburgerBtn=document.getElementById('hamburgerBtn'),sidebar=document.getElementById('sidebar'),overlay=document.getElementById('overlay');
+  function toggleSidebar(){const o=sidebar.classList.toggle('open');overlay.classList.toggle('open',o);hamburgerBtn.setAttribute('aria-expanded',o);}
+  hamburgerBtn.addEventListener('click',toggleSidebar);overlay.addEventListener('click',toggleSidebar);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sidebar.classList.contains('open'))toggleSidebar();});
+  document.querySelectorAll('.font-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.font-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.documentElement.style.fontSize=btn.dataset.size+'px';});});
+  const notifBtn=document.getElementById('notifBtn'),notifMenu=document.getElementById('notifMenu'),userMenuBtn=document.getElementById('userMenuBtn'),userMenu=document.getElementById('userMenu');
+  notifBtn.addEventListener('click',e=>{e.stopPropagation();notifMenu.classList.toggle('open');userMenu.classList.remove('open');});
+  userMenuBtn.addEventListener('click',e=>{e.stopPropagation();userMenu.classList.toggle('open');notifMenu.classList.remove('open');});
+  document.addEventListener('click',()=>{notifMenu.classList.remove('open');userMenu.classList.remove('open');});
+  // Filter
+  document.querySelectorAll('.filter-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const f=tab.dataset.filter;
+      document.querySelectorAll('#loanTable tbody tr').forEach(row=>{
+        row.style.display=(f==='all'||row.dataset.status===f)?'':'none';
+      });
+    });
+  });
+</script>
+</body>
+</html>

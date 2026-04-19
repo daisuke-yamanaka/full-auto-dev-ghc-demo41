@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ダッシュボード - LibraryMS</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #0078d4;
+      --primary-dark: #005a9e;
+      --primary-light: #deecf9;
+      --sidebar-bg: #f3f2f1;
+      --sidebar-width: 240px;
+      --sidebar-mini: 60px;
+      --header-height: 56px;
+      --text-primary: #323130;
+      --text-secondary: #605e5c;
+      --border-color: #edebe9;
+      --success: #107c10;
+      --warning: #d83b01;
+      --danger: #a4262c;
+      --white: #ffffff;
+      --font-size-base: 14px;
+    }
+    html { font-size: var(--font-size-base); }
+    body { font-family: 'Segoe UI','Meiryo',sans-serif; background: #faf9f8; color: var(--text-primary); min-height: 100vh; }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      position: fixed; top: 0; left: 0; right: 0; height: var(--header-height);
+      background: var(--primary); color: var(--white);
+      display: flex; align-items: center; padding: 0 16px;
+      z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      gap: 8px;
+    }
+    .hamburger-btn {
+      background: none; border: none; color: var(--white); cursor: pointer;
+      font-size: 20px; padding: 8px; border-radius: 4px; line-height: 1;
+      display: none;
+    }
+    .hamburger-btn:hover { background: rgba(255,255,255,0.15); }
+    .hamburger-btn:focus { outline: 2px solid rgba(255,255,255,0.6); }
+    .app-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--white); font-size: 18px; font-weight: 700; }
+    .app-logo span { font-size: 22px; }
+    .header-spacer { flex: 1; }
+    .font-size-controls { display: flex; align-items: center; gap: 4px; }
+    .font-size-controls span { font-size: 12px; opacity: 0.85; margin-right: 4px; }
+    .font-btn {
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+      color: var(--white); cursor: pointer; border-radius: 3px; padding: 3px 8px;
+      font-size: 11px; font-weight: 600; transition: background 0.15s;
+    }
+    .font-btn:hover, .font-btn.active { background: rgba(255,255,255,0.30); }
+    .font-btn:focus { outline: 2px solid rgba(255,255,255,0.6); }
+    .header-icon-btn {
+      position: relative; background: none; border: none; color: var(--white);
+      cursor: pointer; font-size: 18px; padding: 8px; border-radius: 4px;
+    }
+    .header-icon-btn:hover { background: rgba(255,255,255,0.15); }
+    .header-icon-btn:focus { outline: 2px solid rgba(255,255,255,0.6); }
+    .notif-badge {
+      position: absolute; top: 4px; right: 4px;
+      background: #d83b01; color: #fff; font-size: 10px; font-weight: 700;
+      min-width: 16px; height: 16px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    }
+    .user-menu-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: none; color: var(--white); cursor: pointer;
+      padding: 6px 10px; border-radius: 4px; font-size: 13px; font-weight: 600;
+    }
+    .user-menu-btn:hover { background: rgba(255,255,255,0.15); }
+    .user-menu-btn:focus { outline: 2px solid rgba(255,255,255,0.6); }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(255,255,255,0.25); display: flex; align-items: center;
+      justify-content: center; font-size: 12px; font-weight: 700;
+    }
+
+    /* Dropdown */
+    .dropdown { position: relative; }
+    .dropdown-menu {
+      position: absolute; top: calc(100% + 4px); right: 0;
+      background: var(--white); border: 1px solid var(--border-color);
+      border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      min-width: 180px; z-index: 2000; display: none; overflow: hidden;
+    }
+    .dropdown-menu.open { display: block; }
+    .dropdown-menu a, .dropdown-menu button {
+      display: block; width: 100%; text-align: left; padding: 10px 16px;
+      color: var(--text-primary); text-decoration: none; background: none; border: none;
+      font-size: 13px; cursor: pointer;
+    }
+    .dropdown-menu a:hover, .dropdown-menu button:hover { background: var(--primary-light); }
+    .dropdown-divider { border: none; border-top: 1px solid var(--border-color); margin: 4px 0; }
+
+    /* Notification dropdown */
+    .notif-dropdown { min-width: 320px; padding: 0; }
+    .notif-header { padding: 12px 16px; border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 13px; }
+    .notif-item { padding: 10px 16px; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item.unread { background: var(--primary-light); }
+    .notif-time { color: var(--text-secondary); font-size: 11px; margin-top: 2px; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      position: fixed; top: var(--header-height); left: 0; bottom: 0;
+      width: var(--sidebar-width); background: var(--sidebar-bg);
+      border-right: 1px solid var(--border-color);
+      overflow-y: auto; overflow-x: hidden;
+      transition: width 0.2s, transform 0.2s;
+      z-index: 900;
+    }
+    .sidebar-nav { padding: 8px 0; }
+    .nav-section-title {
+      font-size: 11px; font-weight: 600; color: var(--text-secondary);
+      padding: 16px 16px 4px; text-transform: uppercase; letter-spacing: 0.5px;
+      white-space: nowrap; overflow: hidden;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; color: var(--text-primary); text-decoration: none;
+      font-size: 13px; font-weight: 500; border-radius: 0;
+      transition: background 0.15s; white-space: nowrap; overflow: hidden;
+      position: relative;
+    }
+    .nav-item:hover { background: #e8e6e4; }
+    .nav-item[aria-current="page"] {
+      background: var(--primary-light); color: var(--primary);
+      border-left: 3px solid var(--primary);
+    }
+    .nav-item:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+    .nav-icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+    .nav-label { flex: 1; }
+    .nav-divider { border: none; border-top: 1px solid var(--border-color); margin: 8px 0; }
+    .nav-admin-label {
+      font-size: 11px; color: var(--text-secondary);
+      padding: 8px 16px 4px; display: flex; align-items: center; gap: 6px;
+    }
+    .nav-admin-label::before, .nav-admin-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--border-color);
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      margin-top: var(--header-height);
+      padding: 24px;
+      min-height: calc(100vh - var(--header-height));
+    }
+
+    /* ===== OVERLAY ===== */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 850;
+    }
+    .overlay.open { display: block; }
+
+    /* ===== PAGE CONTENT ===== */
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+    .page-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* Alert banner */
+    .alert-banner {
+      background: #fde7e9; border: 1px solid #f1707a; border-radius: 6px;
+      padding: 12px 16px; margin-bottom: 20px;
+      display: flex; align-items: flex-start; gap: 10px; font-size: 13px;
+    }
+    .alert-banner .alert-icon { font-size: 18px; flex-shrink: 0; }
+    .alert-banner strong { color: var(--danger); }
+
+    /* KPI Cards */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+    .kpi-card {
+      background: var(--white); border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 20px; display: flex; flex-direction: column;
+      gap: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .kpi-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
+    .kpi-value { font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+    .kpi-sub { font-size: 12px; color: var(--text-secondary); }
+    .kpi-card.danger .kpi-value { color: var(--danger); }
+    .kpi-card.warning .kpi-value { color: var(--warning); }
+    .kpi-card.success .kpi-value { color: var(--success); }
+    .kpi-card.primary .kpi-value { color: var(--primary); }
+    .kpi-icon { font-size: 24px; }
+
+    /* Content grid */
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+    /* Card */
+    .card {
+      background: var(--white); border: 1px solid var(--border-color);
+      border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      overflow: hidden; margin-bottom: 20px;
+    }
+    .card-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .card-link { font-size: 12px; color: var(--primary); text-decoration: none; }
+    .card-link:hover { text-decoration: underline; }
+    .card-body { padding: 0; }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th {
+      background: #f8f7f6; padding: 10px 16px; text-align: left;
+      font-weight: 600; color: var(--text-secondary); font-size: 12px;
+      border-bottom: 1px solid var(--border-color); white-space: nowrap;
+    }
+    .data-table td { padding: 12px 16px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover { background: #faf9f8; }
+
+    /* Status badges */
+    .badge {
+      display: inline-flex; align-items: center; padding: 2px 8px;
+      border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .badge-danger { background: #fde7e9; color: var(--danger); }
+    .badge-warning { background: #fff4ce; color: #7d6608; }
+    .badge-success { background: #dff6dd; color: var(--success); }
+    .badge-info { background: var(--primary-light); color: var(--primary); }
+    .badge-gray { background: #f3f2f1; color: var(--text-secondary); }
+
+    /* Timeline */
+    .timeline { padding: 16px 20px; }
+    .timeline-item { display: flex; gap: 12px; padding: 8px 0; position: relative; }
+    .timeline-item:not(:last-child)::after {
+      content: ''; position: absolute; left: 11px; top: 28px; bottom: -8px;
+      width: 2px; background: var(--border-color);
+    }
+    .timeline-dot {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; margin-top: 2px; z-index: 1;
+    }
+    .timeline-dot.loan { background: #dff6dd; }
+    .timeline-dot.return { background: var(--primary-light); }
+    .timeline-dot.reserve { background: #fff4ce; }
+    .timeline-content { flex: 1; }
+    .timeline-text { font-size: 13px; color: var(--text-primary); }
+    .timeline-time { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Reservation widget */
+    .reservation-item {
+      padding: 12px 20px; border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .reservation-item:last-child { border-bottom: none; }
+    .reservation-rank {
+      width: 24px; height: 24px; border-radius: 50%; background: var(--primary-light);
+      color: var(--primary); font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .reservation-title { font-size: 13px; font-weight: 600; }
+    .reservation-sub { font-size: 12px; color: var(--text-secondary); }
+
+    /* Footer */
+    .app-footer {
+      margin-left: var(--sidebar-width); padding: 16px 24px;
+      font-size: 12px; color: var(--text-secondary);
+      border-top: 1px solid var(--border-color); text-align: center;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1023px) and (min-width: 768px) {
+      .sidebar { width: var(--sidebar-mini); }
+      .nav-label, .nav-section-title, .nav-admin-label { display: none; }
+      .nav-item { padding: 12px; justify-content: center; }
+      .nav-item[aria-current="page"] { border-left: 3px solid var(--primary); }
+      .nav-icon { width: auto; font-size: 18px; }
+      .main-content { margin-left: var(--sidebar-mini); }
+      .app-footer { margin-left: var(--sidebar-mini); }
+      .kpi-grid { grid-template-columns: repeat(2,1fr); }
+      .content-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 767px) {
+      .hamburger-btn { display: block; }
+      .sidebar { transform: translateX(-100%); width: var(--sidebar-width); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; padding: 16px; }
+      .app-footer { margin-left: 0; }
+      .kpi-grid { grid-template-columns: repeat(2,1fr); }
+      .content-grid { grid-template-columns: 1fr; }
+      .font-size-controls span { display: none; }
+    }
+    @media (max-width: 480px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+    /* Focus styles */
+    a:focus, button:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="app-header" role="banner">
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="メニューを開く" aria-expanded="false" aria-controls="sidebar">☰</button>
+  <a href="./dashboard.html" class="app-logo" aria-label="LibraryMS ホーム">
+    <span aria-hidden="true">📚</span> LibraryMS
+  </a>
+  <div class="header-spacer"></div>
+  <div class="font-size-controls" role="group" aria-label="文字サイズ切り替え">
+    <span>文字サイズ:</span>
+    <button class="font-btn active" data-size="14" aria-pressed="true">標準</button>
+    <button class="font-btn" data-size="16" aria-pressed="false">大</button>
+    <button class="font-btn" data-size="18" aria-pressed="false">特大</button>
+  </div>
+  <div class="dropdown">
+    <button class="header-icon-btn" id="notifBtn" aria-label="通知（2件）" aria-expanded="false" aria-haspopup="true">
+      🔔<span class="notif-badge" aria-hidden="true">2</span>
+    </button>
+    <div class="dropdown-menu notif-dropdown" id="notifMenu" role="menu">
+      <div class="notif-header">通知</div>
+      <div class="notif-item unread">
+        <div>「Clean Code」の返却期限を過ぎています</div>
+        <div class="notif-time">2024/06/01</div>
+      </div>
+      <div class="notif-item unread">
+        <div>予約中の「Clean Architecture」が利用可能になりました</div>
+        <div class="notif-time">2024/06/05</div>
+      </div>
+      <div class="notif-item">
+        <div>「Design Patterns」を返却しました</div>
+        <div class="notif-time">2024/06/03</div>
+      </div>
+    </div>
+  </div>
+  <div class="dropdown">
+    <button class="user-menu-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true">
+      <div class="user-avatar" aria-hidden="true">山</div>
+      山田 太郎 ▾
+    </button>
+    <div class="dropdown-menu" id="userMenu" role="menu">
+      <a href="./profile.html" role="menuitem">👤 プロフィール</a>
+      <a href="./password.html" role="menuitem">🔑 パスワード変更</a>
+      <hr class="dropdown-divider">
+      <a href="./login.html" role="menuitem">🚪 ログアウト</a>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="メインナビゲーション">
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">メニュー</div>
+    <a href="./dashboard.html" class="nav-item" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">🏠</span>
+      <span class="nav-label">ダッシュボード</span>
+    </a>
+    <a href="./activity.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">📋</span>
+      <span class="nav-label">アクティビティ</span>
+    </a>
+    <a href="./books.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">📚</span>
+      <span class="nav-label">図書一覧・検索</span>
+    </a>
+    <a href="./loan-history.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">📖</span>
+      <span class="nav-label">貸出履歴</span>
+    </a>
+    <a href="./reservations.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">🔖</span>
+      <span class="nav-label">予約一覧</span>
+    </a>
+    <a href="./profile.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">👤</span>
+      <span class="nav-label">プロフィール</span>
+    </a>
+    <a href="./password.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">🔑</span>
+      <span class="nav-label">パスワード変更</span>
+    </a>
+    <!-- 管理者のみ表示 -->
+    <hr class="nav-divider">
+    <div class="nav-admin-label">管理者のみ</div>
+    <a href="./book-management.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">📗</span>
+      <span class="nav-label">図書管理</span>
+    </a>
+    <a href="./user-management.html" class="nav-item">
+      <span class="nav-icon" aria-hidden="true">👥</span>
+      <span class="nav-label">ユーザ管理</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- Overlay for mobile -->
+<div class="overlay" id="overlay" aria-hidden="true"></div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" id="main" role="main">
+  <div class="page-header">
+    <h1 class="page-title">ダッシュボード</h1>
+    <p class="page-subtitle">2024年6月5日（水）— ようこそ、山田 太郎さん</p>
+  </div>
+
+  <!-- Alert banner -->
+  <div class="alert-banner" role="alert">
+    <span class="alert-icon">⚠️</span>
+    <div>
+      <strong>返却期限超過の図書があります</strong><br>
+      「Clean Code」の返却期限が2024/05/29に過ぎています。早急にご返却ください。
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" role="region" aria-label="利用状況サマリ">
+    <div class="kpi-card primary">
+      <div class="kpi-icon" aria-hidden="true">📚</div>
+      <div class="kpi-label">現在の貸出冊数</div>
+      <div class="kpi-value">3 <span style="font-size:16px;font-weight:400;color:var(--text-secondary)">/ 5冊</span></div>
+      <div class="kpi-sub">残り2冊借りられます</div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="kpi-icon" aria-hidden="true">⏰</div>
+      <div class="kpi-label">延滞中</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">返却期限超過</div>
+    </div>
+    <div class="kpi-card warning">
+      <div class="kpi-icon" aria-hidden="true">🔖</div>
+      <div class="kpi-label">予約中</div>
+      <div class="kpi-value">2</div>
+      <div class="kpi-sub">順番待ち中</div>
+    </div>
+    <div class="kpi-card success">
+      <div class="kpi-icon" aria-hidden="true">✅</div>
+      <div class="kpi-label">今月の読了数</div>
+      <div class="kpi-value">4</div>
+      <div class="kpi-sub">先月比 +1冊</div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div>
+      <!-- 貸出中の図書 -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📖 現在貸出中の図書</h2>
+          <a href="./loan-history.html" class="card-link">すべての貸出履歴 →</a>
+        </div>
+        <div class="card-body">
+          <table class="data-table" aria-label="貸出中図書一覧">
+            <thead>
+              <tr>
+                <th>書名</th>
+                <th>著者</th>
+                <th>貸出日</th>
+                <th>返却期限</th>
+                <th>状態</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a href="./book-detail.html" style="color:var(--primary);text-decoration:none;font-weight:600">Clean Code</a></td>
+                <td>Robert C. Martin</td>
+                <td>2024/05/15</td>
+                <td style="color:var(--danger);font-weight:600">2024/05/29</td>
+                <td><span class="badge badge-danger">延滞中</span></td>
+              </tr>
+              <tr>
+                <td><a href="./book-detail.html" style="color:var(--primary);text-decoration:none;font-weight:600">リーダブルコード</a></td>
+                <td>Dustin Boswell</td>
+                <td>2024/05/20</td>
+                <td>2024/06/03</td>
+                <td><span class="badge badge-info">貸出中</span></td>
+              </tr>
+              <tr>
+                <td><a href="./book-detail.html" style="color:var(--primary);text-decoration:none;font-weight:600">ドメイン駆動設計</a></td>
+                <td>Eric Evans</td>
+                <td>2024/05/22</td>
+                <td>2024/06/05</td>
+                <td><span class="badge badge-info">貸出中</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 直近の活動ログ -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📋 直近の活動</h2>
+          <a href="./activity.html" class="card-link">すべて表示 →</a>
+        </div>
+        <div class="card-body">
+          <div class="timeline" role="list">
+            <div class="timeline-item" role="listitem">
+              <div class="timeline-dot loan" aria-hidden="true">📤</div>
+              <div class="timeline-content">
+                <div class="timeline-text">「Effective Java」を貸し出しました</div>
+                <div class="timeline-time">2024/06/05 10:30</div>
+              </div>
+            </div>
+            <div class="timeline-item" role="listitem">
+              <div class="timeline-dot return" aria-hidden="true">📥</div>
+              <div class="timeline-content">
+                <div class="timeline-text">「Design Patterns」を返却しました</div>
+                <div class="timeline-time">2024/06/03 15:20</div>
+              </div>
+            </div>
+            <div class="timeline-item" role="listitem">
+              <div class="timeline-dot reserve" aria-hidden="true">🔖</div>
+              <div class="timeline-content">
+                <div class="timeline-text">「Clean Architecture」を予約しました</div>
+                <div class="timeline-time">2024/06/01 09:15</div>
+              </div>
+            </div>
+            <div class="timeline-item" role="listitem">
+              <div class="timeline-dot loan" aria-hidden="true">📤</div>
+              <div class="timeline-content">
+                <div class="timeline-text">「リーダブルコード」を貸し出しました</div>
+                <div class="timeline-time">2024/05/30 14:00</div>
+              </div>
+            </div>
+            <div class="timeline-item" role="listitem">
+              <div class="timeline-dot return" aria-hidden="true">📥</div>
+              <div class="timeline-content">
+                <div class="timeline-text">「プログラミングRust」を返却しました</div>
+                <div class="timeline-time">2024/05/28 11:45</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- 予約中の図書 -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🔖 予約中の図書</h2>
+          <a href="./reservations.html" class="card-link">一覧へ →</a>
+        </div>
+        <div class="card-body">
+          <div class="reservation-item">
+            <div class="reservation-rank" aria-label="予約順位1位">1</div>
+            <div>
+              <div class="reservation-title">Clean Architecture</div>
+              <div class="reservation-sub">Robert C. Martin</div>
+              <div class="reservation-sub" style="margin-top:4px"><span class="badge badge-success">利用可能</span></div>
+            </div>
+          </div>
+          <div class="reservation-item">
+            <div class="reservation-rank" aria-label="予約順位2位">2</div>
+            <div>
+              <div class="reservation-title">ピープルウェア</div>
+              <div class="reservation-sub">Tom DeMarco</div>
+              <div class="reservation-sub" style="margin-top:4px"><span class="badge badge-warning">2番目に待機中</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- クイックアクセス -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">⚡ クイックアクセス</h2>
+        </div>
+        <div class="card-body" style="padding:16px">
+          <a href="./books.html" style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-color);border-radius:6px;text-decoration:none;color:var(--text-primary);margin-bottom:8px;font-size:13px;transition:background 0.15s" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''">
+            <span>🔍</span> 図書を検索する
+          </a>
+          <a href="./loan-history.html" style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-color);border-radius:6px;text-decoration:none;color:var(--text-primary);margin-bottom:8px;font-size:13px;transition:background 0.15s" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''">
+            <span>📖</span> 貸出履歴を見る
+          </a>
+          <a href="./reservations.html" style="display:flex;align-items:center;gap:8px;padding:10px;border:1px solid var(--border-color);border-radius:6px;text-decoration:none;color:var(--text-primary);font-size:13px;transition:background 0.15s" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background=''">
+            <span>🔖</span> 予約を確認する
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="app-footer" role="contentinfo">
+  © 2024 LibraryMS — 図書管理システム
+</footer>
+
+<script>
+  // Hamburger menu toggle
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  function toggleSidebar() {
+    const isOpen = sidebar.classList.toggle('open');
+    overlay.classList.toggle('open', isOpen);
+    hamburgerBtn.setAttribute('aria-expanded', isOpen);
+    overlay.setAttribute('aria-hidden', !isOpen);
+  }
+  hamburgerBtn.addEventListener('click', toggleSidebar);
+  overlay.addEventListener('click', toggleSidebar);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && sidebar.classList.contains('open')) toggleSidebar(); });
+
+  // Font size switcher
+  const fontBtns = document.querySelectorAll('.font-btn');
+  fontBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      fontBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed','true');
+      document.documentElement.style.fontSize = btn.dataset.size + 'px';
+    });
+  });
+
+  // Notification dropdown
+  const notifBtn = document.getElementById('notifBtn');
+  const notifMenu = document.getElementById('notifMenu');
+  notifBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = notifMenu.classList.toggle('open');
+    notifBtn.setAttribute('aria-expanded', isOpen);
+    userMenu.classList.remove('open');
+    userMenuBtn.setAttribute('aria-expanded','false');
+  });
+
+  // User menu dropdown
+  const userMenuBtn = document.getElementById('userMenuBtn');
+  const userMenu = document.getElementById('userMenu');
+  userMenuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = userMenu.classList.toggle('open');
+    userMenuBtn.setAttribute('aria-expanded', isOpen);
+    notifMenu.classList.remove('open');
+    notifBtn.setAttribute('aria-expanded','false');
+  });
+
+  document.addEventListener('click', () => {
+    notifMenu.classList.remove('open');
+    userMenu.classList.remove('open');
+    notifBtn.setAttribute('aria-expanded','false');
+    userMenuBtn.setAttribute('aria-expanded','false');
+  });
+</script>
+</body>
+</html>

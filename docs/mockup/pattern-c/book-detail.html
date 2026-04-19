@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>図書詳細 — 図書管理システム</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; background: #fffbf0; color: #333; font-size: 16px; }
+    a { color: #7B4B00; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 20px; }
+    .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #ff8c00; color: #1a1a1a; }
+    .btn-outline { background: #fff; color: #7B4B00; border: 2px solid #ff8c00; }
+    .btn-danger  { background: #c62828; color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .breadcrumb { padding: 12px 0; font-size: 14px; color: #666; margin-bottom: 8px; }
+    .breadcrumb a { color: #7B4B00; text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb .sep { margin: 0 6px; color: #999; }
+    .page-title { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 20px; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; }
+    .badge-green { background: #e8f5e9; color: #2e7d32; }
+    .badge-red   { background: #ffebee; color: #c62828; }
+    /* two-col layout */
+    .detail-layout { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
+    @media (max-width: 700px) { .detail-layout { grid-template-columns: 1fr; } }
+    .book-cover-lg {
+      background: #e3f2fd; border-radius: 12px;
+      height: 280px; display: flex; align-items: center; justify-content: center;
+      font-size: 72px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .detail-table { width: 100%; border-collapse: collapse; }
+    .detail-table tr:not(:last-child) td { border-bottom: 1px solid #f0f0f0; }
+    .detail-table td { padding: 10px 8px; font-size: 15px; }
+    .detail-table td:first-child { color: #888; font-weight: bold; width: 130px; white-space: nowrap; }
+    .action-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #fff3e0; padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #ffcc80; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+    tr:hover td { background: #fff8f0; }
+    .section-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #555; }
+    /* related books */
+    .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 600px) { .related-grid { grid-template-columns: 1fr; } }
+    .mini-card { background: #fff; border-radius: 10px; box-shadow: 0 1px 5px rgba(0,0,0,0.08); padding: 12px; display: flex; gap: 10px; align-items: center; font-size: 13px; }
+    .mini-cover { width: 40px; height: 50px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    @media (max-width: 768px) {
+      #bottom-nav { display: flex !important; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 2px solid #ff8c00; justify-content: space-around; padding: 8px 0 12px; z-index: 200; }
+      #bottom-nav a { display: flex; flex-direction: column; align-items: center; color: #7B4B00; text-decoration: none; font-size: 10px; gap: 2px; }
+      #bottom-nav a span { font-size: 10px; }
+      body { padding-bottom: 70px; }
+    }
+  </style>
+</head>
+<body>
+  <header style="background:#ff8c00;color:#1a1a1a;height:60px;display:flex;align-items:center;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+    <a href="home.html" style="color: #1a1a1a;text-decoration:none;font-size:24px;margin-right:12px;" title="ホーム">🏠</a>
+    <span style="font-size:20px;font-weight:bold;flex:1;">📚 図書管理システム</span>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <select onchange="changeFontSize(this.value)" style="padding:4px 8px;border-radius:6px;border:none;font-size:14px;" title="文字サイズ">
+        <option value="16">標準</option>
+        <option value="18">大</option>
+        <option value="20">特大</option>
+      </select>
+      <span style="font-size:14px;">👤 山田 太郎</span>
+      <a href="login.html" style="background:#fff;color: #7B4B00;padding:6px 14px;border-radius:20px;text-decoration:none;font-size:14px;font-weight:bold;">ログアウト</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <nav class="breadcrumb" aria-label="パンくずリスト">
+      <a href="home.html">🏠 ホーム</a>
+      <span class="sep">›</span>
+      <a href="books.html">図書一覧</a>
+      <span class="sep">›</span>
+      <span style="color:#333;">図書詳細</span>
+    </nav>
+
+    <div style="margin-bottom:12px;">
+      <a href="books.html" class="btn btn-outline btn-sm">← 一覧に戻る</a>
+    </div>
+
+    <h1 class="page-title">📖 図書詳細</h1>
+
+    <div class="card">
+      <div class="detail-layout">
+        <div>
+          <div class="book-cover-lg">📚</div>
+          <div class="action-row" style="margin-top:16px;flex-direction:column;">
+            <button class="btn btn-primary" style="width:100%;">📖 この本を借りる</button>
+            <button class="btn btn-outline" style="width:100%;margin-top:8px;">🔖 予約する</button>
+          </div>
+        </div>
+        <div>
+          <table class="detail-table">
+            <tr><td>書名</td><td><strong>リーダブルコード</strong></td></tr>
+            <tr><td>著者</td><td>Dustin Boswell, Trevor Foucher</td></tr>
+            <tr><td>出版社</td><td>オライリー・ジャパン</td></tr>
+            <tr><td>出版年</td><td>2012年</td></tr>
+            <tr><td>ISBN</td><td>978-4-87311-565-8</td></tr>
+            <tr><td>カテゴリ</td><td><span class="badge badge-green">プログラミング</span></td></tr>
+            <tr><td>状態</td><td><span class="badge badge-green">在庫あり ✅</span></td></tr>
+            <tr><td>所蔵数</td><td>3冊 ／ 貸出中: 1冊 ／ <strong style="color:#2e7d32;">利用可能: 2冊</strong></td></tr>
+          </table>
+          <!-- admin buttons -->
+          <div style="margin-top:20px;display:flex;gap:10px;">
+            <a href="book-form.html" class="btn btn-outline btn-sm">✏️ 編集</a>
+            <button class="btn btn-danger btn-sm">🗑️ 削除</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- loan history -->
+    <div class="card">
+      <div class="section-title">📋 貸出履歴（直近5件）</div>
+      <table>
+        <thead>
+          <tr><th>貸出日</th><th>返却日</th><th>状態</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2024-01-02</td><td>2024-01-16</td><td><span class="badge badge-green">返却済み</span></td></tr>
+          <tr><td>2023-12-10</td><td>2023-12-24</td><td><span class="badge badge-green">返却済み</span></td></tr>
+          <tr><td>2023-11-15</td><td>2023-11-29</td><td><span class="badge badge-green">返却済み</span></td></tr>
+          <tr><td>2023-10-20</td><td>2023-11-03</td><td><span class="badge badge-green">返却済み</span></td></tr>
+          <tr><td>2023-09-01</td><td>2023-09-15</td><td><span class="badge badge-green">返却済み</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- related books -->
+    <div class="card">
+      <div class="section-title">📚 同じカテゴリの図書</div>
+      <div class="related-grid">
+        <div class="mini-card">
+          <div class="mini-cover" style="background:#e3f2fd;">📗</div>
+          <div>
+            <div style="font-weight:bold;">Clean Code</div>
+            <div style="color:#888;">Robert C. Martin</div>
+            <a href="book-detail.html" style="font-size:12px;">詳細 →</a>
+          </div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-cover" style="background:#e8f5e9;">📘</div>
+          <div>
+            <div style="font-weight:bold;">達人プログラマー</div>
+            <div style="color:#888;">Andrew Hunt</div>
+            <a href="book-detail.html" style="font-size:12px;">詳細 →</a>
+          </div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-cover" style="background:#fff9c4;">📙</div>
+          <div>
+            <div style="font-weight:bold;">デザインパターン入門</div>
+            <div style="color:#888;">GoF</div>
+            <a href="book-detail.html" style="font-size:12px;">詳細 →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav style="display:none;" id="bottom-nav" aria-label="ボトムナビゲーション">
+    <a href="home.html">🏠<span>ホーム</span></a>
+    <a href="books.html">🔍<span>図書検索</span></a>
+    <a href="dashboard.html">📖<span>貸出状況</span></a>
+    <a href="profile.html">👤<span>プロフィール</span></a>
+  </nav>
+
+  <script>
+    function changeFontSize(size) {
+      document.body.style.fontSize = size + 'px';
+      localStorage.setItem('fontSize', size);
+    }
+    window.addEventListener('DOMContentLoaded', function() {
+      var s = localStorage.getItem('fontSize');
+      if (s) { document.body.style.fontSize = s + 'px'; }
+    });
+  </script>
+</body>
+</html>
+
+
