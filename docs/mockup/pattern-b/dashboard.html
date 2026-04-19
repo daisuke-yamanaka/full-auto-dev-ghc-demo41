@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>図書管理システム - ダッシュボード</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 14px; }
+    body { font-family: 'Noto Sans JP', 'Roboto', sans-serif; background: #f8f9fa; color: #202124; min-height: 100vh; }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: 64px; background: #fff; border-bottom: 1px solid #dadce0; border-left: 4px solid #1a73e8; display: flex; align-items: center; padding: 0 16px; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.08); transition: left 0.3s ease; }
+    .app-header.drawer-pinned { left: 280px; }
+    .header-title { font-size: 1.25rem; font-weight: 500; color: #202124; margin-left: 8px; }
+    .header-spacer { flex: 1; }
+    .header-btn { background: none; border: none; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #5f6368; margin: 0 4px; transition: background 0.15s; }
+    .header-btn:hover { background: #f1f3f4; }
+    .badge { position: absolute; top: 6px; right: 6px; background: #d93025; color: white; font-size: 10px; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .avatar { background: #1a73e8; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; }
+    .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.32); z-index: 150; }
+    .drawer-overlay.show { display: block; }
+    .drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #fff; z-index: 200; display: flex; flex-direction: column; transition: left 0.3s ease, box-shadow 0.3s ease; overflow-y: auto; }
+    .drawer.open { left: 0; box-shadow: 4px 0 12px rgba(0,0,0,.15); }
+    .drawer.pinned { box-shadow: none; border-right: 1px solid #dadce0; }
+    .drawer-header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #dadce0; flex-shrink: 0; }
+    .drawer-logo { display: flex; align-items: center; gap: 12px; font-size: 1rem; font-weight: 600; color: #202124; }
+    .pin-btn { background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.5; padding: 4px; border-radius: 4px; display: none; }
+    .pin-btn:hover { opacity: 1; background: #f1f3f4; }
+    .pin-btn.active { opacity: 1; color: #1a73e8; }
+    @media (min-width: 1024px) { .pin-btn { display: flex; } }
+    .drawer-user { display: flex; align-items: center; gap: 12px; padding: 16px; flex-shrink: 0; }
+    .drawer-avatar { background: #1a73e8; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+    .drawer-user-name { font-weight: 500; font-size: 0.875rem; }
+    .drawer-user-role { font-size: 0.75rem; color: #5f6368; }
+    .drawer-divider { height: 1px; background: #dadce0; margin: 4px 0; flex-shrink: 0; }
+    .drawer-section-label { padding: 8px 16px 4px; font-size: 0.75rem; font-weight: 500; color: #5f6368; text-transform: uppercase; letter-spacing: 0.05em; }
+    .drawer-nav { padding: 4px 0; }
+    .drawer-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; color: #202124; text-decoration: none; font-size: 0.875rem; border-radius: 0 24px 24px 0; margin-right: 8px; transition: background 0.15s; }
+    .drawer-item:hover { background: #f1f3f4; }
+    .drawer-item.active { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+    .drawer-logout { color: #d93025; }
+    .drawer-font-size { padding: 8px 16px 16px; }
+    .font-size-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .font-btn { flex: 1; padding: 6px 4px; border: 1px solid #dadce0; border-radius: 4px; background: white; color: #5f6368; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; font-family: inherit; }
+    .font-btn.active { background: #e8f0fe; border-color: #1a73e8; color: #1a73e8; font-weight: 500; }
+    .main-content { margin-top: 64px; padding: 24px; min-height: calc(100vh - 64px); transition: margin-left 0.3s ease; }
+    .main-content.drawer-pinned { margin-left: 280px; }
+    .snackbar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #323232; color: #fff; border-radius: 4px; padding: 12px 24px; font-size: 0.875rem; z-index: 9999; opacity: 0; transition: all 0.3s ease; white-space: nowrap; }
+    .snackbar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .page-title { font-size: 1.5rem; font-weight: 400; color: #202124; margin-bottom: 24px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 767px) { .summary-grid { grid-template-columns: 1fr; } }
+    .summary-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24); padding: 20px; }
+    .summary-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .summary-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .summary-icon.primary { background: #e8f0fe; }
+    .summary-icon.error { background: #fce8e6; }
+    .summary-icon.warning { background: #fef7e0; }
+    .summary-num { font-size: 2rem; font-weight: 300; color: #202124; }
+    .summary-num.error { color: #d93025; }
+    .summary-num.warning { color: #f9ab00; }
+    .summary-label { font-size: 0.75rem; color: #5f6368; margin-top: 4px; }
+    .progress-bar { height: 6px; background: #dadce0; border-radius: 3px; margin-top: 12px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #1a73e8; border-radius: 3px; transition: width 0.5s; }
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24); padding: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 1rem; font-weight: 500; color: #202124; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 12px 16px; text-align: left; font-size: 0.75rem; font-weight: 500; color: #5f6368; border-bottom: 2px solid #dadce0; background: #f8f9fa; white-space: nowrap; }
+    td { padding: 12px 16px; font-size: 0.875rem; border-bottom: 1px solid #dadce0; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8f9fa; }
+    .tr-overdue td { background: #fdecea !important; }
+    .tr-overdue:hover td { background: #fce8e6 !important; }
+    .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 16px; font-size: 0.75rem; font-weight: 500; }
+    .chip-error { background: #fce8e6; color: #c5221f; }
+    .chip-success { background: #e6f4ea; color: #137333; }
+    .chip-warning { background: #fef7e0; color: #e37400; }
+    .chip-info { background: #e8f0fe; color: #1a73e8; }
+    .chip-neutral { background: #f1f3f4; color: #5f6368; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8125rem; font-weight: 500; text-decoration: none; transition: background 0.15s; font-family: inherit; }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-primary:hover { background: #1557b0; }
+    .btn-outline { background: transparent; border: 1px solid #dadce0; color: #5f6368; }
+    .btn-outline:hover { background: #f1f3f4; }
+    .reserve-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.12); padding: 16px; display: flex; align-items: center; gap: 16px; }
+    .reserve-book-icon { width: 48px; height: 60px; background: #fef7e0; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .reserve-info { flex: 1; }
+    .reserve-title { font-size: 0.9375rem; font-weight: 500; }
+    .reserve-author { font-size: 0.8125rem; color: #5f6368; margin-top: 2px; }
+    .reserve-rank { font-size: 0.8125rem; color: #e37400; margin-top: 4px; font-weight: 500; }
+    @media (max-width: 599px) { .main-content { padding: 16px; } .page-title { font-size: 1.25rem; } }
+  </style>
+</head>
+<body>
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <nav class="drawer" id="drawer" role="navigation" aria-label="メインナビゲーション">
+    <div class="drawer-header">
+      <div class="drawer-logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="14" height="18" rx="2" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/><rect x="6" y="3" width="14" height="18" rx="2" fill="#fff" stroke="#1a73e8" stroke-width="1.5"/><line x1="10" y1="8" x2="16" y2="8" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="12" x2="16" y2="12" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>図書管理</span>
+      </div>
+      <button class="pin-btn" id="pinBtn" onclick="togglePin()" title="ドロワーを固定" aria-label="ドロワーを固定">📌</button>
+    </div>
+    <div class="drawer-user">
+      <div class="drawer-avatar">山田</div>
+      <div><div class="drawer-user-name">山田 太郎</div><div class="drawer-user-role">一般ユーザ</div></div>
+    </div>
+    <div class="drawer-divider"></div>
+    <nav class="drawer-nav">
+      <a href="activity.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>アクティビティ</a>
+      <a href="dashboard.html" class="drawer-item active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>ダッシュボード</a>
+      <a href="books.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>図書を探す</a>
+      <a href="loan-history.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>貸出履歴</a>
+      <a href="reservations.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>予約一覧</a>
+    </nav>
+    <div class="drawer-divider"></div>
+    <div class="drawer-section-label">管理者メニュー</div>
+    <nav class="drawer-nav">
+      <a href="book-management.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="9" y1="10" x2="15" y2="10"/></svg>図書管理</a>
+      <a href="user-management.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>ユーザ管理</a>
+    </nav>
+    <div class="drawer-divider"></div>
+    <div class="drawer-font-size">
+      <div class="drawer-section-label">文字サイズ</div>
+      <div class="font-size-btns">
+        <button onclick="setFontSize('normal')" class="font-btn active">標準</button>
+        <button onclick="setFontSize('large')" class="font-btn">大</button>
+        <button onclick="setFontSize('xlarge')" class="font-btn">特大</button>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="drawer-divider"></div>
+    <nav class="drawer-nav" style="padding-bottom:8px">
+      <a href="login.html" class="drawer-item drawer-logout"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ログアウト</a>
+    </nav>
+  </nav>
+
+  <header class="app-header" id="appHeader" role="banner">
+    <button class="header-btn" onclick="toggleDrawer()" aria-label="メニューを開く">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="header-title">図書管理システム</span>
+    <div class="header-spacer"></div>
+    <button class="header-btn" onclick="window.location.href='books.html'" aria-label="検索"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <button class="header-btn" style="position:relative" aria-label="通知 3件"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="badge">3</span></button>
+    <button class="header-btn" onclick="window.location.href='profile.html'" aria-label="プロフィール"><div class="avatar">山田</div></button>
+  </header>
+
+  <main class="main-content" id="mainContent" role="main">
+    <h1 class="page-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" style="vertical-align:middle;margin-right:8px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      ダッシュボード
+    </h1>
+
+    <!-- サマリカード -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-header">
+          <div>
+            <div class="summary-num">2</div>
+            <div class="summary-label">現在の貸出冊数（最大5冊）</div>
+          </div>
+          <div class="summary-icon primary">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+        <div style="font-size:0.75rem;color:#5f6368;margin-top:4px;">2 / 5冊使用中</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <div>
+            <div class="summary-num error">1</div>
+            <div class="summary-label">延滞中の図書</div>
+          </div>
+          <div class="summary-icon error">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d93025" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:0.8125rem;color:#d93025;font-weight:500;">⚠ 返却期限を過ぎています</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-header">
+          <div>
+            <div class="summary-num warning">1</div>
+            <div class="summary-label">返却期限が近い図書（3日以内）</div>
+          </div>
+          <div class="summary-icon warning">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f9ab00" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:0.8125rem;color:#f9ab00;font-weight:500;">期限3日以内の図書があります</div>
+      </div>
+    </div>
+
+    <!-- 借りている図書一覧 -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        借りている図書
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>書名</th>
+              <th>著者</th>
+              <th>貸出日</th>
+              <th>返却期限</th>
+              <th>状態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="tr-overdue">
+              <td><a href="book-detail.html" style="color:#1a73e8;text-decoration:none;">こころ</a></td>
+              <td>夏目漱石</td>
+              <td>2024-01-08</td>
+              <td style="color:#d93025;font-weight:500;">2024-01-15</td>
+              <td><span class="chip chip-error">延滞中</span></td>
+              <td><button class="btn btn-outline" onclick="showSnackbar('返却手続きを行います')">返却</button></td>
+            </tr>
+            <tr>
+              <td><a href="book-detail.html" style="color:#1a73e8;text-decoration:none;">ノルウェイの森</a></td>
+              <td>村上春樹</td>
+              <td>2024-01-12</td>
+              <td>2024-01-19</td>
+              <td><span class="chip chip-info">貸出中</span></td>
+              <td><button class="btn btn-outline" onclick="showSnackbar('返却手続きを行います')">返却</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 予約中の図書 -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00897b" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        予約中の図書
+      </div>
+      <div class="reserve-card">
+        <div class="reserve-book-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e37400" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div class="reserve-info">
+          <div class="reserve-title">銀河鉄道の夜</div>
+          <div class="reserve-author">宮沢賢治</div>
+          <div class="reserve-rank">🔖 予約順位: 1位</div>
+        </div>
+        <a href="reservations.html" style="color:#1a73e8;font-size:0.8125rem;text-decoration:none;">詳細</a>
+      </div>
+    </div>
+  </main>
+
+  <div class="snackbar" id="snackbar" role="status" aria-live="polite"></div>
+
+  <script>
+    let isDrawerOpen = false, isPinned = false;
+    function initDrawer() { if (window.innerWidth >= 1024 && localStorage.getItem('drawerPinned') === 'true') setPinned(true); }
+    function toggleDrawer() { if (isPinned) { setPinned(false); return; } isDrawerOpen ? closeDrawer() : openDrawer(); }
+    function openDrawer() { isDrawerOpen = true; document.getElementById('drawer').classList.add('open'); if (!isPinned) document.getElementById('drawerOverlay').classList.add('show'); }
+    function closeDrawer() { if (isPinned) return; isDrawerOpen = false; document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); }
+    function togglePin() { setPinned(!isPinned); }
+    function setPinned(pinned) {
+      isPinned = pinned; localStorage.setItem('drawerPinned', pinned);
+      const d = document.getElementById('drawer'), c = document.getElementById('mainContent'), h = document.getElementById('appHeader'), o = document.getElementById('drawerOverlay'), pb = document.getElementById('pinBtn');
+      if (pinned) { isDrawerOpen = true; d.classList.add('open','pinned'); o.classList.remove('show'); c.classList.add('drawer-pinned'); h.classList.add('drawer-pinned'); if (pb) pb.classList.add('active'); }
+      else { isDrawerOpen = false; d.classList.remove('open','pinned'); c.classList.remove('drawer-pinned'); h.classList.remove('drawer-pinned'); if (pb) pb.classList.remove('active'); }
+    }
+    function showSnackbar(msg, dur=3000) { const s=document.getElementById('snackbar'); s.textContent=msg; s.classList.add('show'); setTimeout(()=>s.classList.remove('show'),dur); }
+    function setFontSize(size) { const sz={normal:'14px',large:'16px',xlarge:'18px'}; document.documentElement.style.fontSize=sz[size]||'14px'; localStorage.setItem('fontSize',size); document.querySelectorAll('.font-btn').forEach(b=>b.classList.remove('active')); const b=document.querySelector(`.font-btn[onclick="setFontSize('${size}')"]`); if(b) b.classList.add('active'); }
+    function initFontSize() { setFontSize(localStorage.getItem('fontSize')||'normal'); }
+    window.addEventListener('load', () => { initDrawer(); initFontSize(); });
+    window.addEventListener('resize', () => { if (window.innerWidth < 1024 && isPinned) setPinned(false); });
+  </script>
+</body>
+</html>

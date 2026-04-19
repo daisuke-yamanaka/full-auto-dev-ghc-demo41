@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>図書管理システム - 図書一覧・検索</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 14px; }
+    body { font-family: 'Noto Sans JP', 'Roboto', sans-serif; background: #f8f9fa; color: #202124; min-height: 100vh; }
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: 64px; background: #fff; border-bottom: 1px solid #dadce0; border-left: 4px solid #1a73e8; display: flex; align-items: center; padding: 0 16px; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,.08); transition: left 0.3s ease; }
+    .app-header.drawer-pinned { left: 280px; }
+    .header-title { font-size: 1.25rem; font-weight: 500; color: #202124; margin-left: 8px; }
+    .header-spacer { flex: 1; }
+    .header-btn { background: none; border: none; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #5f6368; margin: 0 4px; transition: background 0.15s; }
+    .header-btn:hover { background: #f1f3f4; }
+    .badge { position: absolute; top: 6px; right: 6px; background: #d93025; color: white; font-size: 10px; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .avatar { background: #1a73e8; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; }
+    .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.32); z-index: 150; }
+    .drawer-overlay.show { display: block; }
+    .drawer { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #fff; z-index: 200; display: flex; flex-direction: column; transition: left 0.3s ease, box-shadow 0.3s ease; overflow-y: auto; }
+    .drawer.open { left: 0; box-shadow: 4px 0 12px rgba(0,0,0,.15); }
+    .drawer.pinned { box-shadow: none; border-right: 1px solid #dadce0; }
+    .drawer-header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #dadce0; flex-shrink: 0; }
+    .drawer-logo { display: flex; align-items: center; gap: 12px; font-size: 1rem; font-weight: 600; color: #202124; }
+    .pin-btn { background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.5; padding: 4px; border-radius: 4px; display: none; }
+    .pin-btn:hover { opacity: 1; background: #f1f3f4; }
+    .pin-btn.active { opacity: 1; color: #1a73e8; }
+    @media (min-width: 1024px) { .pin-btn { display: flex; } }
+    .drawer-user { display: flex; align-items: center; gap: 12px; padding: 16px; flex-shrink: 0; }
+    .drawer-avatar { background: #1a73e8; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+    .drawer-user-name { font-weight: 500; font-size: 0.875rem; }
+    .drawer-user-role { font-size: 0.75rem; color: #5f6368; }
+    .drawer-divider { height: 1px; background: #dadce0; margin: 4px 0; flex-shrink: 0; }
+    .drawer-section-label { padding: 8px 16px 4px; font-size: 0.75rem; font-weight: 500; color: #5f6368; text-transform: uppercase; letter-spacing: 0.05em; }
+    .drawer-nav { padding: 4px 0; }
+    .drawer-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; color: #202124; text-decoration: none; font-size: 0.875rem; border-radius: 0 24px 24px 0; margin-right: 8px; transition: background 0.15s; }
+    .drawer-item:hover { background: #f1f3f4; }
+    .drawer-item.active { background: #e8f0fe; color: #1a73e8; font-weight: 500; }
+    .drawer-logout { color: #d93025; }
+    .drawer-font-size { padding: 8px 16px 16px; }
+    .font-size-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .font-btn { flex: 1; padding: 6px 4px; border: 1px solid #dadce0; border-radius: 4px; background: white; color: #5f6368; cursor: pointer; font-size: 0.75rem; transition: all 0.15s; font-family: inherit; }
+    .font-btn.active { background: #e8f0fe; border-color: #1a73e8; color: #1a73e8; font-weight: 500; }
+    .main-content { margin-top: 64px; padding: 24px; min-height: calc(100vh - 64px); transition: margin-left 0.3s ease; }
+    .main-content.drawer-pinned { margin-left: 280px; }
+    .snackbar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #323232; color: #fff; border-radius: 4px; padding: 12px 24px; font-size: 0.875rem; z-index: 9999; opacity: 0; transition: all 0.3s ease; white-space: nowrap; }
+    .snackbar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .page-title { font-size: 1.5rem; font-weight: 400; color: #202124; margin-bottom: 20px; }
+    /* 検索バー */
+    .search-area { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.12); padding: 16px; margin-bottom: 20px; }
+    .search-bar { display: flex; gap: 8px; }
+    .search-input-wrap { flex: 1; position: relative; }
+    .search-input { width: 100%; padding: 10px 12px 10px 40px; border: 1px solid #dadce0; border-radius: 4px; font-size: 0.9375rem; color: #202124; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+    .search-input:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.2); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #5f6368; pointer-events: none; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: background 0.15s; font-family: inherit; white-space: nowrap; }
+    .btn-primary { background: #1a73e8; color: #fff; }
+    .btn-primary:hover { background: #1557b0; }
+    .btn-outline { background: transparent; border: 1px solid #1a73e8; color: #1a73e8; }
+    .btn-outline:hover { background: #e8f0fe; }
+    .btn-accent { background: #00897b; color: #fff; }
+    .btn-accent:hover { background: #00695c; }
+    .btn-sm { padding: 4px 12px; font-size: 0.75rem; }
+    .filter-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.875rem; color: #5f6368; margin-top: 12px; background: none; border: none; font-family: inherit; }
+    .filter-toggle:hover { color: #1a73e8; }
+    .filter-panel { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #dadce0; }
+    .filter-panel.open { display: flex; flex-wrap: wrap; gap: 16px; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 0.75rem; font-weight: 500; color: #5f6368; }
+    .filter-select { padding: 8px 12px; border: 1px solid #dadce0; border-radius: 4px; font-size: 0.875rem; color: #202124; background: #fff; font-family: inherit; cursor: pointer; }
+    .filter-select:focus { outline: none; border-color: #1a73e8; }
+    /* グリッド */
+    .results-info { font-size: 0.875rem; color: #5f6368; margin-bottom: 16px; }
+    .book-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 1023px) { .book-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 599px) { .book-grid { grid-template-columns: 1fr; } }
+    .book-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24); padding: 16px; display: flex; flex-direction: column; transition: box-shadow 0.15s, transform 0.15s; }
+    .book-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.15); transform: translateY(-2px); }
+    .book-icon { width: 80px; height: 100px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .book-icon.lit { background: #e8f0fe; }
+    .book-icon.tech { background: #e6f4ea; }
+    .book-icon.hist { background: #fef7e0; }
+    .book-icon.sci { background: #f3e8fd; }
+    .book-icon.other { background: #f1f3f4; }
+    .book-title { font-size: 0.9375rem; font-weight: 500; margin-bottom: 4px; }
+    .book-author { font-size: 0.8125rem; color: #5f6368; margin-bottom: 8px; }
+    .book-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 4px; }
+    .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 16px; font-size: 0.72rem; font-weight: 500; }
+    .chip-success { background: #e6f4ea; color: #137333; }
+    .chip-error { background: #fce8e6; color: #c5221f; }
+    .chip-warning { background: #fef7e0; color: #e37400; }
+    .chip-info { background: #e8f0fe; color: #1a73e8; }
+    .chip-neutral { background: #f1f3f4; color: #5f6368; }
+    .book-card-footer { margin-top: auto; }
+    /* ページネーション */
+    .pagination { display: flex; gap: 4px; align-items: center; justify-content: center; margin-top: 32px; }
+    .page-btn { width: 36px; height: 36px; border: 1px solid #dadce0; border-radius: 4px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; color: #202124; text-decoration: none; transition: background 0.15s; font-family: inherit; }
+    .page-btn:hover { background: #f1f3f4; }
+    .page-btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+    .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    @media (max-width: 599px) { .main-content { padding: 16px; } .page-title { font-size: 1.25rem; } }
+  </style>
+</head>
+<body>
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <nav class="drawer" id="drawer" role="navigation" aria-label="メインナビゲーション">
+    <div class="drawer-header">
+      <div class="drawer-logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="14" height="18" rx="2" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/><rect x="6" y="3" width="14" height="18" rx="2" fill="#fff" stroke="#1a73e8" stroke-width="1.5"/><line x1="10" y1="8" x2="16" y2="8" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="12" x2="16" y2="12" stroke="#1a73e8" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>図書管理</span>
+      </div>
+      <button class="pin-btn" id="pinBtn" onclick="togglePin()" title="ドロワーを固定" aria-label="ドロワーを固定">📌</button>
+    </div>
+    <div class="drawer-user">
+      <div class="drawer-avatar">山田</div>
+      <div><div class="drawer-user-name">山田 太郎</div><div class="drawer-user-role">一般ユーザ</div></div>
+    </div>
+    <div class="drawer-divider"></div>
+    <nav class="drawer-nav">
+      <a href="activity.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>アクティビティ</a>
+      <a href="dashboard.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>ダッシュボード</a>
+      <a href="books.html" class="drawer-item active"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>図書を探す</a>
+      <a href="loan-history.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>貸出履歴</a>
+      <a href="reservations.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>予約一覧</a>
+    </nav>
+    <div class="drawer-divider"></div>
+    <div class="drawer-section-label">管理者メニュー</div>
+    <nav class="drawer-nav">
+      <a href="book-management.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="9" y1="10" x2="15" y2="10"/></svg>図書管理</a>
+      <a href="user-management.html" class="drawer-item"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>ユーザ管理</a>
+    </nav>
+    <div class="drawer-divider"></div>
+    <div class="drawer-font-size">
+      <div class="drawer-section-label">文字サイズ</div>
+      <div class="font-size-btns">
+        <button onclick="setFontSize('normal')" class="font-btn active">標準</button>
+        <button onclick="setFontSize('large')" class="font-btn">大</button>
+        <button onclick="setFontSize('xlarge')" class="font-btn">特大</button>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="drawer-divider"></div>
+    <nav class="drawer-nav" style="padding-bottom:8px">
+      <a href="login.html" class="drawer-item drawer-logout"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>ログアウト</a>
+    </nav>
+  </nav>
+
+  <header class="app-header" id="appHeader" role="banner">
+    <button class="header-btn" onclick="toggleDrawer()" aria-label="メニューを開く">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="header-title">図書管理システム</span>
+    <div class="header-spacer"></div>
+    <button class="header-btn" onclick="window.location.href='books.html'" aria-label="検索"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+    <button class="header-btn" style="position:relative" aria-label="通知 3件"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="badge">3</span></button>
+    <button class="header-btn" onclick="window.location.href='profile.html'" aria-label="プロフィール"><div class="avatar">山田</div></button>
+  </header>
+
+  <main class="main-content" id="mainContent" role="main">
+    <h1 class="page-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2" style="vertical-align:middle;margin-right:8px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      図書を探す
+    </h1>
+
+    <div class="search-area">
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input type="text" class="search-input" placeholder="タイトル・著者で検索" value="" aria-label="図書を検索">
+        </div>
+        <button class="btn btn-primary" onclick="showSnackbar('検索しました（12件）')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          検索
+        </button>
+      </div>
+      <button class="filter-toggle" onclick="toggleFilter()" aria-expanded="false" id="filterToggle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        絞り込み条件
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="filterChevron"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="filter-panel" id="filterPanel">
+        <div class="filter-group">
+          <label class="filter-label">カテゴリ</label>
+          <select class="filter-select" aria-label="カテゴリフィルター">
+            <option>すべて</option>
+            <option>文学</option>
+            <option>技術</option>
+            <option>歴史</option>
+            <option>科学</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">在庫状況</label>
+          <select class="filter-select" aria-label="在庫状況フィルター">
+            <option>すべて</option>
+            <option>貸出可</option>
+            <option>貸出中</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">並び順</label>
+          <select class="filter-select" aria-label="並び順">
+            <option>タイトル順</option>
+            <option>著者順</option>
+            <option>登録日順</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <p class="results-info">12件の図書が見つかりました</p>
+
+    <div class="book-grid">
+      <!-- 1 -->
+      <div class="book-card">
+        <div class="book-icon lit"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">吾輩は猫である</div>
+        <div class="book-author">夏目漱石</div>
+        <div class="book-meta"><span class="chip chip-info">文学</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 2 -->
+      <div class="book-card">
+        <div class="book-icon lit"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">坊っちゃん</div>
+        <div class="book-author">夏目漱石</div>
+        <div class="book-meta"><span class="chip chip-info">文学</span><span class="chip chip-warning">貸出中（残1冊）</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 3 -->
+      <div class="book-card">
+        <div class="book-icon lit"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">銀河鉄道の夜</div>
+        <div class="book-author">宮沢賢治</div>
+        <div class="book-meta"><span class="chip chip-info">文学</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 4 -->
+      <div class="book-card">
+        <div class="book-icon lit"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">人間失格</div>
+        <div class="book-author">太宰治</div>
+        <div class="book-meta"><span class="chip chip-info">文学</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 5 -->
+      <div class="book-card">
+        <div class="book-icon lit"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">ノルウェイの森</div>
+        <div class="book-author">村上春樹</div>
+        <div class="book-meta"><span class="chip chip-info">文学</span><span class="chip chip-neutral">貸出中</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 6 -->
+      <div class="book-card">
+        <div class="book-icon lit"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">こころ</div>
+        <div class="book-author">夏目漱石</div>
+        <div class="book-meta"><span class="chip chip-info">文学</span><span class="chip chip-neutral">貸出中</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 7 -->
+      <div class="book-card">
+        <div class="book-icon tech"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#137333" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">クリーンコード</div>
+        <div class="book-author">Robert C. Martin</div>
+        <div class="book-meta"><span class="chip chip-success" style="background:#e6f4ea;color:#137333;">技術</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 8 -->
+      <div class="book-card">
+        <div class="book-icon tech"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#137333" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">リーダブルコード</div>
+        <div class="book-author">Dustin Boswell</div>
+        <div class="book-meta"><span class="chip chip-success" style="background:#e6f4ea;color:#137333;">技術</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 9 -->
+      <div class="book-card">
+        <div class="book-icon hist"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#e37400" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">銃・病原菌・鉄</div>
+        <div class="book-author">ジャレド・ダイアモンド</div>
+        <div class="book-meta"><span class="chip chip-warning">歴史</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 10 -->
+      <div class="book-card">
+        <div class="book-icon hist"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#e37400" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">サピエンス全史</div>
+        <div class="book-author">ユヴァル・ノア・ハラリ</div>
+        <div class="book-meta"><span class="chip chip-warning">歴史</span><span class="chip chip-neutral">貸出中</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 11 -->
+      <div class="book-card">
+        <div class="book-icon sci"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#7c4dff" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">種の起源</div>
+        <div class="book-author">チャールズ・ダーウィン</div>
+        <div class="book-meta"><span class="chip" style="background:#f3e8fd;color:#7c4dff;">科学</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+      <!-- 12 -->
+      <div class="book-card">
+        <div class="book-icon sci"><svg width="36" height="44" viewBox="0 0 24 24" fill="none" stroke="#7c4dff" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="book-title">相対性理論</div>
+        <div class="book-author">アルベルト・アインシュタイン</div>
+        <div class="book-meta"><span class="chip" style="background:#f3e8fd;color:#7c4dff;">科学</span><span class="chip chip-success">貸出可</span></div>
+        <div class="book-card-footer"><a href="book-detail.html" class="btn btn-outline" style="width:100%;justify-content:center;">詳細</a></div>
+      </div>
+    </div>
+
+    <div class="pagination" role="navigation" aria-label="ページネーション">
+      <button class="page-btn" disabled aria-label="前のページ">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="page-btn active" aria-current="page">1</button>
+      <button class="page-btn" onclick="showSnackbar('ページ2に移動')">2</button>
+      <button class="page-btn" onclick="showSnackbar('ページ3に移動')">3</button>
+      <button class="page-btn" onclick="showSnackbar('次のページへ')" aria-label="次のページ">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </main>
+
+  <div class="snackbar" id="snackbar" role="status" aria-live="polite"></div>
+
+  <script>
+    let isDrawerOpen = false, isPinned = false;
+    function initDrawer() { if (window.innerWidth >= 1024 && localStorage.getItem('drawerPinned') === 'true') setPinned(true); }
+    function toggleDrawer() { if (isPinned) { setPinned(false); return; } isDrawerOpen ? closeDrawer() : openDrawer(); }
+    function openDrawer() { isDrawerOpen = true; document.getElementById('drawer').classList.add('open'); if (!isPinned) document.getElementById('drawerOverlay').classList.add('show'); }
+    function closeDrawer() { if (isPinned) return; isDrawerOpen = false; document.getElementById('drawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); }
+    function togglePin() { setPinned(!isPinned); }
+    function setPinned(pinned) {
+      isPinned = pinned; localStorage.setItem('drawerPinned', pinned);
+      const d = document.getElementById('drawer'), c = document.getElementById('mainContent'), h = document.getElementById('appHeader'), o = document.getElementById('drawerOverlay'), pb = document.getElementById('pinBtn');
+      if (pinned) { isDrawerOpen = true; d.classList.add('open','pinned'); o.classList.remove('show'); c.classList.add('drawer-pinned'); h.classList.add('drawer-pinned'); if (pb) pb.classList.add('active'); }
+      else { isDrawerOpen = false; d.classList.remove('open','pinned'); c.classList.remove('drawer-pinned'); h.classList.remove('drawer-pinned'); if (pb) pb.classList.remove('active'); }
+    }
+    function showSnackbar(msg, dur=3000) { const s=document.getElementById('snackbar'); s.textContent=msg; s.classList.add('show'); setTimeout(()=>s.classList.remove('show'),dur); }
+    function setFontSize(size) { const sz={normal:'14px',large:'16px',xlarge:'18px'}; document.documentElement.style.fontSize=sz[size]||'14px'; localStorage.setItem('fontSize',size); document.querySelectorAll('.font-btn').forEach(b=>b.classList.remove('active')); const b=document.querySelector(`.font-btn[onclick="setFontSize('${size}')"]`); if(b) b.classList.add('active'); }
+    function initFontSize() { setFontSize(localStorage.getItem('fontSize')||'normal'); }
+    function toggleFilter() {
+      const panel = document.getElementById('filterPanel');
+      const toggle = document.getElementById('filterToggle');
+      const chevron = document.getElementById('filterChevron');
+      const isOpen = panel.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', isOpen);
+      chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+    }
+    window.addEventListener('load', () => { initDrawer(); initFontSize(); });
+    window.addEventListener('resize', () => { if (window.innerWidth < 1024 && isPinned) setPinned(false); });
+  </script>
+</body>
+</html>
