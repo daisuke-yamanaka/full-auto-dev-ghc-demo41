@@ -18,6 +18,8 @@ export default function BookListPage() {
   const size = 20;
 
   const [searchForm, setSearchForm] = useState({ title: '', author: '', category: '', isbn: '' });
+
+  const CATEGORIES = ['プログラミング', 'データベース', 'Web開発', 'AI/ML', 'ソフトウェア設計', 'インフラ'];
   const [activeSearch, setActiveSearch] = useState<BookSearchParams>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -79,7 +81,6 @@ export default function BookListPage() {
               {[
                 { key: 'title', label: 'タイトル' },
                 { key: 'author', label: '著者名' },
-                { key: 'category', label: 'カテゴリ' },
                 { key: 'isbn', label: 'ISBN' },
               ].map(({ key, label }) => (
                 <input key={key} type="text" placeholder={label}
@@ -91,6 +92,19 @@ export default function BookListPage() {
                   }}
                 />
               ))}
+              <select
+                value={searchForm.category}
+                onChange={(e) => setSearchForm((f) => ({ ...f, category: e.target.value }))}
+                style={{
+                  flex: '1 1 160px', padding: '8px 12px', border: '1px solid #dadce0',
+                  borderRadius: 4, fontSize: 14, outline: 'none', backgroundColor: '#fff',
+                }}
+              >
+                <option value="">カテゴリを選択</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
               <button type="submit" style={{
                 padding: '8px 20px', backgroundColor: '#1a73e8', color: '#fff',
                 border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600,

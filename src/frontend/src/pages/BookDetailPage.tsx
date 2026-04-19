@@ -7,11 +7,13 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import { getBook } from '../api/books';
 import { createLoan, returnLoan } from '../api/loans';
 import { createReservation, cancelReservation } from '../api/reservations';
+import { getMyLoans } from '../api/me';
 import { deleteBook } from '../api/admin';
 import { useSnackbar } from '../contexts/SnackbarContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate } from '../utils/dateUtils';
-import type { BookDetailResponse } from '../types';
+import { LOAN_PERIOD_DAYS } from '../constants/business';
+import type { BookDetailResponse, MyLoansResponse } from '../types';
 import type { ErrorResponse } from '../types';
 import type { AxiosError } from 'axios';
 
@@ -24,6 +26,7 @@ export default function BookDetailPage() {
   const isAdmin = user?.role === 'ADMIN';
 
   const [book, setBook] = useState<BookDetailResponse | null>(null);
+  const [userLoans, setUserLoans] = useState<MyLoansResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -33,8 +36,12 @@ export default function BookDetailPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await getBook(bookId);
-      setBook(res);
+      const [bookRes, loansRes] = await Promise.all([
+        getBook(bookId),
+        !isAdmin ? getMyLoans(1, 1) : Promise.resolve(null),
+      ]);
+      setBook(bookRes);
+      setUserLoans(loansRes);
     } catch (err) {
       const axiosErr = err as AxiosError<ErrorResponse>;
       if (axiosErr.response?.status === 404) {
@@ -142,8 +149,14 @@ export default function BookDetailPage() {
       showSnackbar(`「${book.title}」を削除しました`, 'success');
       navigate('/admin/books');
     } catch (err) {
+      const axiosErr = err as AxiosError<ErrorResponse>;
       console.error('[BookDetail] delete error', err);
-      showSnackbar('削除に失敗しました', 'error');
+      if (axiosErr.response?.status === 409) {
+        showSnackbar('データが更新されました。再読込してください', 'error');
+        await fetchBook();
+      } else {
+        showSnackbar('削除に失敗しました', 'error');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -226,11 +239,23 @@ export default function BookDetailPage() {
 
             {/* Action buttons */}
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: isAdmin ? 20 : 0 }}>
-              {book.currentUserStatus === 'none' && book.availableCopies > 0 && (
-                <button onClick={handleLoan} disabled={actionLoading} style={btnStyle('#1a73e8')}>
-                  貸し出す
-                </button>
-              )}
+              {book.currentUserStatus === 'none' && book.availableCopies > 0 && (() => {
+                const overdue = userLoans?.isOverdue ?? false;
+                const atLimit = userLoans != null && userLoans.remainingLoanCount === 0;
+                const disabled = actionLoading || overdue || atLimit;
+                const title = overdue
+                  ? '延滞中の図書があります。返却してください。'
+                  : atLimit
+                    ? `貸出上限（${userLoans?.currentLoanCount}冊）に達しています`
+                    : `貸出期間: ${LOAN_PERIOD_DAYS}日`;
+                return (
+                  <button onClick={handleLoan} disabled={disabled}
+                    title={title}
+                    style={{ ...btnStyle('#1a73e8'), opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+                    貸し出す
+                  </button>
+                );
+              })()}
               {book.currentUserStatus === 'none' && book.availableCopies === 0 && (
                 <button onClick={handleReservation} disabled={actionLoading} style={btnStyle('#00897b')}>
                   予約する

@@ -49,15 +49,18 @@ export default function ProfilePage() {
       const nameChanged = name.trim() !== profile.name;
       const fontSizeChanged = fontSize !== profile.fontSize;
 
+      let currentVersion = profile.version;
+
       if (nameChanged) {
-        const updated = await updateMyProfile({ name: name.trim(), version: profile.version });
+        const updated = await updateMyProfile({ name: name.trim(), version: currentVersion });
         setProfile(updated);
         updateUser({ name: updated.name });
+        currentVersion = updated.version;
       }
       if (fontSizeChanged) {
-        const settingsRes = await updateMySettings({ fontSize, version: profile.version });
+        const settingsRes = await updateMySettings({ fontSize, version: currentVersion });
         updateUser({ fontSize: settingsRes.fontSize });
-        setProfile((prev) => prev ? { ...prev, fontSize: settingsRes.fontSize } : null);
+        setProfile((prev) => prev ? { ...prev, fontSize: settingsRes.fontSize, version: settingsRes.version } : null);
       }
       showSnackbar('プロフィールを更新しました', 'success');
     } catch (err) {
