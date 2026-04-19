@@ -28,9 +28,9 @@ test.describe('図書管理テスト（管理者）', () => {
     await page.fill('input[placeholder="タイトル"]', 'テスト図書E2E');
     await page.click('button:has-text("検索")');
     await page.waitForLoadState('networkidle');
-    const deleteBtn = page.locator('button:has-text("🗑️")').first();
-    if (await deleteBtn.isVisible()) {
-      await deleteBtn.click();
+    const deleteBtnCount = await page.locator('button:has-text("🗑️")').count();
+    if (deleteBtnCount > 0) {
+      await page.locator('button:has-text("🗑️")').first().click();
       await expect(page.locator('text=図書の削除')).toBeVisible();
       await page.click('button:has-text("削除する")');
       await page.waitForTimeout(500);
@@ -103,5 +103,56 @@ test.describe('図書管理テスト（管理者）', () => {
     await page.goto('/admin/books');
     await page.waitForURL('/');
     await expect(page).toHaveURL('/');
+  });
+
+  test('BADM-005: 楽観的ロックにより古いバージョンで更新すると409エラーになる（FR-028）', async ({ page }) => {
+    await loginAsAdmin(page);
+
+    // Get a book to test optimistic locking
+    const bookData = await page.evaluate(async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8082/api/books?size=20&page=1', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      return (data.books || [])[0];
+    });
+    expect(bookData, 'No books available for optimistic lock test').toBeTruthy();
+
+    // Navigate to edit page — form loads current version from API
+    await page.goto(`/admin/books/${bookData.id}/edit`);
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h2:has-text("図書編集")')).toBeVisible();
+
+    // While still on the edit page, update the book via admin API to increment version in DB
+    await page.evaluate(async (bookId: number) => {
+      const token = localStorage.getItem('token');
+      const bookRes = await fetch(`http://localhost:8082/api/books/${bookId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const book = await bookRes.json();
+      await fetch(`http://localhost:8082/api/admin/books/${bookId}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: book.title,
+          author: book.author,
+          isbn: book.isbn,
+          publisher: book.publisher,
+          publishedYear: book.publishedYear,
+          category: book.category,
+          totalCopies: book.totalCopies,
+          version: book.version,
+        }),
+      });
+    }, bookData.id);
+
+    // Submit the form — it sends the old version (form state not refreshed)
+    await page.click('button[type="submit"]');
+
+    // Verify the 409 conflict error message appears
+    await expect(
+      page.locator('text=データが更新されました。再読込してください')
+    ).toBeVisible({ timeout: 10000 });
   });
 });

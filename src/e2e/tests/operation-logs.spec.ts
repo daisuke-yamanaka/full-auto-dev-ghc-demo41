@@ -26,20 +26,18 @@ test.describe('操作ログテスト', () => {
       return { success: r.ok, bookTitle: book.title };
     });
 
+    // Ensure loan succeeded before checking logs
+    expect(loanResult.success, `Setup failed: ${(loanResult as any).reason || 'could not borrow book for user003'}`).toBe(true);
+
     // Now admin checks operation logs
     await loginAsAdmin(page);
     await page.goto('/admin/logs');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('h2:has-text("操作ログ")')).toBeVisible();
 
-    if (loanResult.success) {
-      // Should have LOAN entry
-      await expect(page.locator('text=LOAN').first()).toBeVisible({ timeout: 10000 });
-      await expect(page.locator('text=user003').first()).toBeVisible();
-    } else {
-      // At least verify the page loads
-      await expect(page.locator('h2:has-text("操作ログ")')).toBeVisible();
-    }
+    // Should have LOAN entry for user003
+    await expect(page.locator('text=LOAN').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=user003').first()).toBeVisible();
   });
 
   test('LOG-002: 返却後に操作ログに RETURN エントリが表示される', async ({ page }) => {

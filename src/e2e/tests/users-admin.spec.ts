@@ -84,3 +84,62 @@ test.describe('ユーザ管理テスト（管理者）', () => {
     await expect(page).toHaveURL('/');
   });
 });
+
+test.describe('ページネーションテスト（FR-027）', () => {
+  test('USRP-001: ユーザが21人以上いるとユーザ一覧にページネーションが表示される', async ({ page }) => {
+    await loginAsAdmin(page);
+
+    // Create 15 additional users to exceed page size of 20 (6 initial + 15 = 21)
+    const createdUsers: Array<{ id: number; version: number }> = await page.evaluate(async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return [];
+      const users: Array<{ id: number; version: number }> = [];
+      for (let i = 0; i < 15; i++) {
+        const suffix = `${Date.now()}${i}`.slice(-8);
+        const res = await fetch('http://localhost:8082/api/admin/users', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: `pg${suffix}`,
+            email: `pg${suffix}@test.com`,
+            name: `ページテスト${i}`,
+            password: 'testpassword1',
+            role: 'USER',
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          users.push({ id: data.id, version: data.version ?? 0 });
+        }
+      }
+      return users;
+    });
+    expect(createdUsers.length).toBeGreaterThan(0);
+
+    // Navigate to admin users page
+    await page.goto('/admin/users');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('h2:has-text("ユーザ管理")')).toBeVisible();
+
+    // Pagination controls should be visible (more than 20 users)
+    await expect(page.locator('button:has-text("次へ")')).toBeVisible({ timeout: 10000 });
+
+    // Click next page and verify previous button becomes enabled
+    await page.click('button:has-text("次へ")');
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('button:has-text("前へ")')).toBeVisible();
+
+    // Cleanup: delete created test users
+    await page.evaluate(async (users: Array<{ id: number; version: number }>) => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      for (const user of users) {
+        await fetch(`http://localhost:8082/api/admin/users/${user.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ version: user.version }),
+        });
+      }
+    }, createdUsers);
+  });
+});

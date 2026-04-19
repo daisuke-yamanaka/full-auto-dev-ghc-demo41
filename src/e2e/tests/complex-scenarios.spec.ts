@@ -453,37 +453,31 @@ test.describe('複合シナリオテスト', () => {
     });
     if (!setupResult.success) throw new Error('Setup failed: could not borrow book for user003');
 
-    // Use H2 console to set overdue for user003
-    await page.goto('http://localhost:8082/h2-console');
-    await page.waitForLoadState('networkidle');
+    // Use H2 console API directly via page.request to set due_date to past (make overdue)
+    const h2Base = 'http://localhost:8082';
+    const h2JdbcUrl = encodeURIComponent('jdbc:h2:mem:librarydb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=USER');
 
-    const urlInput = page.locator('input[name="url"]').first();
-    if (await urlInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await urlInput.fill('jdbc:h2:mem:librarydb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=USER');
-      const userInput = page.locator('input[name="user"]').first();
-      if (await userInput.isVisible()) await userInput.fill('sa');
-      const pwInput = page.locator('input[name="password"], input[type="password"]').first();
-      if (await pwInput.isVisible()) await pwInput.fill('');
-      await page.click('input[value="Connect"], input[type="submit"]');
-      await page.waitForLoadState('networkidle');
-    }
+    // Step 1: Get H2 console login page to obtain jsessionid
+    const initRes = await page.request.get(`${h2Base}/h2-console/login.do`);
+    const initHtml = await initRes.text();
+    const jsessMatch = initHtml.match(/jsessionid=([a-f0-9]+)/);
+    expect(jsessMatch, 'H2 console did not return jsessionid').toBeTruthy();
+    const h2Jsess = jsessMatch![1];
 
-    const frames = page.frames();
-    let sqlTextarea = page.locator('textarea#sql, textarea.commandArea, #commandInput');
-    for (const frame of frames) {
-      const ta = frame.locator('textarea').first();
-      if (await ta.isVisible({ timeout: 1000 }).catch(() => false)) {
-        sqlTextarea = ta as any;
-        break;
-      }
-    }
+    // Step 2: Login to H2 console
+    await page.request.post(`${h2Base}/h2-console/login.do?jsessionid=${h2Jsess}`, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      data: `language=en&setting=Generic+H2+(Embedded)&name=Generic+H2+(Embedded)&driver=org.h2.Driver&url=${h2JdbcUrl}&user=sa&password=`,
+    });
 
-    const sql = `UPDATE loans SET due_date = '2020-01-01' WHERE returned_at IS NULL AND user_id = (SELECT id FROM users WHERE user_id = 'user003') LIMIT 1`;
-    if (await sqlTextarea.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await sqlTextarea.fill(sql);
-      await page.keyboard.press('Control+Enter');
-      await page.waitForTimeout(500);
-    }
+    // Step 3: Execute SQL to mark loan as overdue
+    const overdueSql = `UPDATE loans SET due_date = '2020-01-01' WHERE returned_at IS NULL AND user_id = (SELECT id FROM users WHERE user_id = 'user003') LIMIT 1`;
+    const queryRes = await page.request.post(`${h2Base}/h2-console/query.do?jsessionid=${h2Jsess}`, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      data: `sql=${encodeURIComponent(overdueSql)}`,
+    });
+    const queryHtml = await queryRes.text();
+    expect(queryHtml).toContain('Update count: 1');
 
     // Re-login as user003 and check dashboard shows overdue warning
     await loginAsUser(page, 3);
@@ -505,6 +499,27 @@ test.describe('複合シナリオテスト', () => {
     await expect(loanBtn).toBeVisible({ timeout: 10000 });
     await expect(loanBtn).toBeDisabled();
     await expect(loanBtn).toHaveAttribute('title', /延滞中の図書があります/);
+
+    // Cleanup: return user003's overdue loan so subsequent tests can borrow
+    await page.evaluate(async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const loansRes = await fetch('http://localhost:8082/api/me/loans?page=1&size=20', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (loansRes.ok) {
+        const ld = await loansRes.json();
+        for (const loan of (ld.loans || [])) {
+          if (loan.status === 'ACTIVE' || loan.status === 'OVERDUE') {
+            await fetch(`http://localhost:8082/api/loans/${loan.loanId}/return`, {
+              method: 'PUT',
+              headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ version: loan.version })
+            });
+          }
+        }
+      }
+    });
   });
 
   test('COMP-005: 未認証・権限外アクセス制御', async ({ page }) => {
