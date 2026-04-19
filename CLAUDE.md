@@ -62,7 +62,7 @@
 | モック作成 | 完了 | `feature/mockup` | PR #3（マージ済み） | パターンB採用 |
 | 設計 | 完了 | `feature/design` | PR #4（マージ済み） |  |
 | 実装（バックエンド） | 完了 | `feature/implementation-backend` | PR #5（マージ済み） | 全23エンドポイント実装済み |
-| 実装（フロントエンド） | 未実施 | `feature/implementation-frontend` |  |  |
+| 実装（フロントエンド） | 完了 | `feature/implementation-frontend` | PR #6（マージ済み） | 全15画面実装済み |
 | 単体テスト | 未実施 | `feature/unit-test` |  |  |
 | E2Eテスト | 未実施 | `feature/e2e-test` |  |  |
 
