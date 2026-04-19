@@ -219,4 +219,36 @@ describe('Layout', () => {
     // useEffect runs and sets localStorage
     expect(localStorage.getItem('drawerPinned')).not.toBeNull()
   })
+
+  it('shows drawer as visible when drawerPinned=true in localStorage', () => {
+    localStorage.setItem('drawerPinned', 'true')
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <SnackbarProvider>
+            <Layout>
+              <span />
+            </Layout>
+          </SnackbarProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    )
+    expect(screen.getByRole('navigation')).toBeInTheDocument()
+  })
+
+  it('applies LARGE font size when user has LARGE fontSize', () => {
+    localStorage.setItem('user', JSON.stringify({ userId: 1, name: 'テスト', role: 'USER', fontSize: 'LARGE' }))
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <SnackbarProvider>
+            <Layout>
+              <span>large</span>
+            </Layout>
+          </SnackbarProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    )
+    expect(screen.getByText('large')).toBeInTheDocument()
+  })
 })

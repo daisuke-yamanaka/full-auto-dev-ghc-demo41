@@ -85,6 +85,14 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code", is("AUTHENTICATION_ERROR")));
     }
 
+    // TC-B068: AccessDeniedException → 403
+    @Test
+    void handleAccessDenied_returns403() throws Exception {
+        mockMvc.perform(get("/test/access-denied"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is("FORBIDDEN")));
+    }
+
     // TC-B066: UnauthorizedOperationException → 403
     @Test
     void handleUnauthorizedOperation_returns403() throws Exception {

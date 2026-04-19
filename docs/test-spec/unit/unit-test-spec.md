@@ -721,3 +721,254 @@
 - **テストファイル**: `ConfirmDialog.test.tsx`
 - **テスト種別**: 正常系
 - **期待結果**: コンポーネントが null を返しレンダリングされない
+
+---
+
+### TC-B068 - GlobalExceptionHandler: AccessDeniedException → 403
+- **テストクラス**: `GlobalExceptionHandlerTest`
+- **テスト種別**: 異常系
+- **前提条件**: AccessDeniedException がスローされる
+- **入力データ**: GET /test/access-denied
+- **期待結果**: HTTP 403, code="FORBIDDEN"
+
+---
+
+## フロントエンドテスト（Vitest + React Testing Library）
+
+### TC-F023 - ActivityFeedPage: アクティビティ一覧の表示 (FR-020)
+**テスト名**: renders activities list
+**前提条件**: ユーザーログイン済み
+**入力**: -
+**操作**: ページを表示する
+**期待結果**: アクティビティリストが表示される
+**優先度**: 高
+
+---
+
+### TC-F024 - ActivityFeedPage: アクティビティ空状態の表示 (FR-020)
+**テスト名**: shows empty state when no activities
+**前提条件**: ユーザーログイン済み、アクティビティなし
+**入力**: activities=[]
+**操作**: ページを表示する
+**期待結果**: 「まだアクティビティがありません」が表示される
+**優先度**: 中
+
+---
+
+### TC-F025 - ActivityFeedPage: アクティビティ取得エラー時 (FR-020)
+**テスト名**: shows error message on fetch failure
+**前提条件**: getMyActivities がネットワークエラーを返す
+**入力**: -
+**操作**: ページを表示する
+**期待結果**: エラーメッセージが表示される
+**優先度**: 中
+
+---
+
+### TC-F026 - ActivityFeedPage: エラー時の再読み込みボタン (FR-020)
+**テスト名**: retries fetching when reload button clicked
+**前提条件**: 初回エラー後、再読み込みボタンをクリック
+**入力**: -
+**操作**: 再読み込みボタンをクリック
+**期待結果**: データが再取得されリストが表示される
+**優先度**: 中
+
+---
+
+### TC-F027 - ActivityFeedPage: アクティビティタイプ別ラベル表示 (FR-020)
+**テスト名**: displays activity type labels
+**前提条件**: LOAN/RETURN/RESERVATIONのアクティビティが存在
+**入力**: activities (LOAN, RETURN, RESERVATION)
+**操作**: ページを表示する
+**期待結果**: 「貸出」「返却」「予約」ラベルが表示される
+**優先度**: 高
+
+---
+
+### TC-F028 - BookFormPage: 図書登録フォームの表示 (FR-030)
+**テスト名**: renders create form with title 図書登録
+**前提条件**: 管理者ログイン済み
+**入力**: -
+**操作**: 新規作成ページを表示する
+**期待結果**: 「図書登録」タイトルが表示される
+**優先度**: 高
+
+---
+
+### TC-F029 - BookFormPage: 図書編集フォームの表示 (FR-031)
+**テスト名**: renders edit form and loads book data
+**前提条件**: 管理者ログイン済み、getBook がモックデータを返す
+**入力**: bookId=1
+**操作**: 編集ページを表示する
+**期待結果**: 「図書編集」タイトルと既存データが表示される
+**優先度**: 高
+
+---
+
+### TC-F030 - BookFormPage: バリデーションエラーの表示 (FR-030)
+**テスト名**: shows validation errors when submitting empty form
+**前提条件**: 管理者ログイン済み
+**入力**: 空フォーム
+**操作**: 保存ボタンをクリック
+**期待結果**: 「必須です」エラーが表示される
+**優先度**: 高
+
+---
+
+### TC-F031 - BookFormPage: 図書登録の成功 (FR-030)
+**テスト名**: creates book and navigates on success
+**前提条件**: createBook がモック成功
+**入力**: 有効な図書データ
+**操作**: フォームを入力して保存
+**期待結果**: createBook が呼ばれる
+**優先度**: 高
+
+---
+
+### TC-F032 - BookFormPage: 図書更新の成功 (FR-031)
+**テスト名**: updates book and navigates on success
+**前提条件**: getBook/updateBook がモック成功
+**入力**: 変更された図書データ
+**操作**: フォームを変更して保存
+**期待結果**: updateBook が呼ばれる
+**優先度**: 高
+
+---
+
+### TC-F033 - BookFormPage: APIエラーの表示 (FR-030)
+**テスト名**: shows api error on save failure
+**前提条件**: createBook が409エラーを返す
+**入力**: 有効な図書データ
+**操作**: フォームを入力して保存
+**期待結果**: 「データが更新されました。再読込してください」が表示される
+**優先度**: 中
+
+---
+
+### TC-F034 - DashboardPage: ダッシュボードの表示 (FR-019)
+**テスト名**: renders dashboard with loan data
+**前提条件**: ユーザーログイン済み、getMyLoans がデータを返す
+**入力**: -
+**操作**: ページを表示する
+**期待結果**: 貸出中図書が表示される
+**優先度**: 高
+
+---
+
+### TC-F035 - DashboardPage: 貸出中なし状態 (FR-019)
+**テスト名**: shows empty state when no active loans
+**前提条件**: getMyLoans が空のリストを返す
+**入力**: loans=[]
+**操作**: ページを表示する
+**期待結果**: 「現在貸出中の図書はありません」が表示される
+**優先度**: 中
+
+---
+
+### TC-F036 - DashboardPage: 延滞警告の表示 (FR-019)
+**テスト名**: shows overdue warning when there are overdue loans
+**前提条件**: isOverdue=true の貸出が存在
+**入力**: loans=[overdueLoan]
+**操作**: ページを表示する
+**期待結果**: 延滞警告メッセージが表示される
+**優先度**: 高
+
+---
+
+### TC-F037 - DashboardPage: 返却操作の成功 (FR-018)
+**テスト名**: calls returnLoan when 返却する button clicked
+**前提条件**: returnLoan がモック成功
+**入力**: loanId=1, version=0
+**操作**: 返却するボタンをクリック
+**期待結果**: returnLoan が正しいパラメータで呼ばれる
+**優先度**: 高
+
+---
+
+### TC-F038 - DashboardPage: 返却エラーの処理 (FR-018)
+**テスト名**: handles return loan error
+**前提条件**: returnLoan が500エラーを返す
+**入力**: -
+**操作**: 返却するボタンをクリック
+**期待結果**: returnLoan が呼ばれる（エラーハンドリング）
+**優先度**: 中
+
+---
+
+### TC-F039 - DashboardPage: データ取得エラーの表示 (FR-019)
+**テスト名**: shows error message on fetch failure
+**前提条件**: getMyLoans がエラーを返す
+**入力**: -
+**操作**: ページを表示する
+**期待結果**: 「データの読み込みに失敗しました。」が表示される
+**優先度**: 中
+
+---
+
+### TC-F040 - PasswordChangePage: パスワード変更フォームの表示 (FR-024)
+**テスト名**: renders password change form
+**前提条件**: ユーザーログイン済み
+**入力**: -
+**操作**: ページを表示する
+**期待結果**: 「パスワード変更」タイトルと変更するボタンが表示される
+**優先度**: 高
+
+---
+
+### TC-F041 - PasswordChangePage: パスワード強度インジケーター (FR-024)
+**テスト名**: shows password strength indicator
+**前提条件**: ユーザーログイン済み
+**入力**: newPassword="weakpw"
+**操作**: 新パスワード欄に入力
+**期待結果**: 強度インジケーターが表示される
+**優先度**: 中
+
+---
+
+### TC-F042 - PasswordChangePage: パスワード不一致エラー (FR-024)
+**テスト名**: shows confirm password mismatch error
+**前提条件**: ユーザーログイン済み
+**入力**: newPassword≠confirmPassword
+**操作**: 異なるパスワードを入力
+**期待結果**: 「パスワードが一致しません」が表示される
+**優先度**: 高
+
+---
+
+### TC-F043 - PasswordChangePage: パスワード変更の成功 (FR-024)
+**テスト名**: submits form and navigates on success
+**前提条件**: changeMyPassword がモック成功
+**入力**: 有効なパスワードデータ
+**操作**: フォームを入力して変更する
+**期待結果**: changeMyPassword が呼ばれ、/me/profile へ遷移する
+**優先度**: 高
+
+---
+
+### TC-F044 - PasswordChangePage: パスワード変更エラー400 (FR-024)
+**テスト名**: shows error message on 400 response
+**前提条件**: changeMyPassword が400エラーを返す
+**入力**: 現在のパスワードが誤り
+**操作**: フォームを入力して変更する
+**期待結果**: 「現在のパスワードが正しくありません」が表示される
+**優先度**: 高
+
+---
+
+### TC-F045 - PasswordChangePage: パスワード変更エラー500 (FR-024)
+**テスト名**: shows generic error message on server error
+**前提条件**: changeMyPassword が500エラーを返す
+**入力**: 有効なパスワードデータ
+**操作**: フォームを入力して変更する
+**期待結果**: 「パスワード変更に失敗しました」が表示される
+**優先度**: 中
+
+---
+
+### TC-F046 - SettingsPage: 設定ページのリダイレクト (FR-023)
+**テスト名**: redirects to profile page on mount
+**前提条件**: ユーザーログイン済み
+**入力**: -
+**操作**: ページを表示する
+**期待結果**: /me/profile へリダイレクトされる
+**優先度**: 中

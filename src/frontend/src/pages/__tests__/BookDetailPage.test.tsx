@@ -271,4 +271,251 @@ describe('BookDetailPage', () => {
       expect(vi.mocked(adminApi.deleteBook)).toHaveBeenCalledWith(1, { version: 0 })
     })
   })
+
+  // Return loan success
+  it('calls returnLoan successfully', async () => {
+    const loanedBook = {
+      ...mockBook,
+      currentUserStatus: 'loaned' as const,
+      currentUserLoanId: 100,
+      currentUserLoanVersion: 0,
+    }
+    vi.mocked(booksApi.getBook).mockResolvedValue(loanedBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+    vi.mocked(loansApi.returnLoan).mockResolvedValueOnce({
+      id: 100, bookId: 1, bookTitle: 'Java入門', returnedAt: '2024-01-14', version: 1,
+    })
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByRole('button', { name: '返却する' }))
+    fireEvent.click(screen.getByRole('button', { name: '返却する' }))
+
+    await waitFor(() => {
+      expect(vi.mocked(loansApi.returnLoan)).toHaveBeenCalledWith(100, { version: 0 })
+    })
+  })
+
+  // Admin shows edit link
+  it('shows edit link for admin', async () => {
+    vi.mocked(booksApi.getBook).mockResolvedValue(mockBook)
+
+    renderBookDetailPage('ADMIN')
+    await waitFor(() => screen.getByText('Java入門'))
+
+    expect(screen.getByRole('link', { name: '編集' })).toBeInTheDocument()
+  })
+
+  // Cancel reservation success
+  it('calls cancelReservation when 予約キャンセル button clicked', async () => {
+    const reservedBook = {
+      ...mockBook,
+      currentUserStatus: 'reserved' as const,
+      currentUserReservationId: 50,
+      currentUserReservationVersion: 0,
+      currentUserQueuePosition: 1,
+      availableCopies: 0,
+    }
+    vi.mocked(booksApi.getBook).mockResolvedValue(reservedBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+    vi.mocked(reservationsApi.cancelReservation).mockResolvedValueOnce(undefined as any)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByRole('button', { name: '予約キャンセル' }))
+    fireEvent.click(screen.getByRole('button', { name: '予約キャンセル' }))
+
+    await waitFor(() => {
+      expect(vi.mocked(reservationsApi.cancelReservation)).toHaveBeenCalledWith(50, { version: 0 })
+    })
+  })
+
+  // Cancel reservation 409 error
+  it('handles 409 on cancel reservation', async () => {
+    const reservedBook = {
+      ...mockBook,
+      currentUserStatus: 'reserved' as const,
+      currentUserReservationId: 50,
+      currentUserReservationVersion: 0,
+      availableCopies: 0,
+    }
+    vi.mocked(booksApi.getBook).mockResolvedValue(reservedBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+    const error = Object.assign(new Error(), { response: { status: 409 } })
+    vi.mocked(reservationsApi.cancelReservation).mockRejectedValueOnce(error)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByRole('button', { name: '予約キャンセル' }))
+    fireEvent.click(screen.getByRole('button', { name: '予約キャンセル' }))
+
+    await waitFor(() => {
+      expect(vi.mocked(reservationsApi.cancelReservation)).toHaveBeenCalled()
+    })
+  })
+
+  // Cancel reservation general error
+  it('handles general error on cancel reservation', async () => {
+    const reservedBook = {
+      ...mockBook,
+      currentUserStatus: 'reserved' as const,
+      currentUserReservationId: 50,
+      currentUserReservationVersion: 0,
+      availableCopies: 0,
+    }
+    vi.mocked(booksApi.getBook).mockResolvedValue(reservedBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+    vi.mocked(reservationsApi.cancelReservation).mockRejectedValueOnce(new Error('network'))
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByRole('button', { name: '予約キャンセル' }))
+    fireEvent.click(screen.getByRole('button', { name: '予約キャンセル' }))
+
+    await waitFor(() => {
+      expect(vi.mocked(reservationsApi.cancelReservation)).toHaveBeenCalled()
+    })
+  })
+
+  // Loan button disabled when at max loans
+  it('disables loan button when user is at max loans', async () => {
+    const atLimitLoans: MyLoansResponse = { ...mockLoans, remainingLoanCount: 0, currentLoanCount: 5 }
+    vi.mocked(booksApi.getBook).mockResolvedValue(mockBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(atLimitLoans)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByText('Java入門'))
+
+    const btn = screen.getByRole('button', { name: '貸し出す' })
+    expect(btn).toBeDisabled()
+  })
+
+  // Loan button disabled when overdue
+  it('disables loan button when user has overdue book', async () => {
+    const overdueLoans: MyLoansResponse = { ...mockLoans, isOverdue: true }
+    vi.mocked(booksApi.getBook).mockResolvedValue(mockBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(overdueLoans)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByText('Java入門'))
+
+    const btn = screen.getByRole('button', { name: '貸し出す' })
+    expect(btn).toBeDisabled()
+  })
+
+  // General fetch error (non-404)
+  it('shows error message and reload button on general fetch error', async () => {
+    const error = Object.assign(new Error(), { response: { status: 500 } })
+    vi.mocked(booksApi.getBook).mockRejectedValueOnce(error)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+
+    renderBookDetailPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('図書の読み込みに失敗しました。')).toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: '再読み込み' })).toBeInTheDocument()
+  })
+
+  // Reload button triggers re-fetch
+  it('reloads book data when reload button is clicked', async () => {
+    const error = Object.assign(new Error(), { response: { status: 500 } })
+    vi.mocked(booksApi.getBook)
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce(mockBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByRole('button', { name: '再読み込み' }))
+
+    fireEvent.click(screen.getByRole('button', { name: '再読み込み' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Java入門')).toBeInTheDocument()
+    })
+  })
+
+  // Delete 409 error
+  it('handles 409 on delete', async () => {
+    vi.mocked(booksApi.getBook).mockResolvedValue(mockBook)
+    const error = Object.assign(new Error(), { response: { status: 409 } })
+    vi.mocked(adminApi.deleteBook).mockRejectedValueOnce(error)
+
+    renderBookDetailPage('ADMIN')
+    await waitFor(() => screen.getByText('Java入門'))
+
+    fireEvent.click(screen.getByRole('button', { name: '削除' }))
+    await waitFor(() => screen.getByText('図書の削除'))
+    fireEvent.click(screen.getByRole('button', { name: '削除する' }))
+
+    await waitFor(() => {
+      expect(vi.mocked(adminApi.deleteBook)).toHaveBeenCalled()
+    })
+  })
+
+  // Queue position display
+  it('displays queue position when user has a reservation', async () => {
+    const reservedBook = {
+      ...mockBook,
+      currentUserStatus: 'reserved' as const,
+      currentUserQueuePosition: 2,
+      availableCopies: 0,
+      currentUserReservationId: 50,
+      currentUserReservationVersion: 0,
+    }
+    vi.mocked(booksApi.getBook).mockResolvedValue(reservedBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByText(/2 番目に予約/))
+    expect(screen.getByText(/2 番目に予約/)).toBeInTheDocument()
+  })
+
+  // earliestDueDate display
+  it('displays earliestDueDate when all copies are on loan', async () => {
+    const fullBook = { ...mockBook, availableCopies: 0, earliestDueDate: '2024-03-01' }
+    vi.mocked(booksApi.getBook).mockResolvedValue(fullBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByText(/返却予定/))
+    expect(screen.getByText(/返却予定/)).toBeInTheDocument()
+  })
+
+  // Reservation count display
+  it('displays reservation count when greater than zero', async () => {
+    const popularBook = { ...mockBook, reservationCount: 3, availableCopies: 0 }
+    vi.mocked(booksApi.getBook).mockResolvedValue(popularBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByText('3件'))
+    expect(screen.getByText('3件')).toBeInTheDocument()
+  })
+
+  // createReservation error handling
+  it('handles error on createReservation', async () => {
+    const fullBook = { ...mockBook, availableCopies: 0 }
+    vi.mocked(booksApi.getBook).mockResolvedValue(fullBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+    vi.mocked(reservationsApi.createReservation).mockRejectedValueOnce(
+      Object.assign(new Error(), { response: { status: 400, data: { message: '予約失敗' } } })
+    )
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByRole('button', { name: '予約する' }))
+    fireEvent.click(screen.getByRole('button', { name: '予約する' }))
+
+    await waitFor(() => {
+      expect(vi.mocked(reservationsApi.createReservation)).toHaveBeenCalled()
+    })
+  })
+
+  // drawerPinned from localStorage
+  it('initializes with pinned drawer when localStorage has drawerPinned=true', async () => {
+    localStorage.setItem('drawerPinned', 'true')
+    vi.mocked(booksApi.getBook).mockResolvedValue(mockBook)
+    vi.mocked(meApi.getMyLoans).mockResolvedValue(mockLoans)
+
+    renderBookDetailPage()
+    await waitFor(() => screen.getByText('Java入門'))
+
+    expect(screen.getByRole('navigation')).toBeInTheDocument()
+  })
 })

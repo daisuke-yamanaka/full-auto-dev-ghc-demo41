@@ -144,7 +144,11 @@ class AuthServiceTest {
         authService.login(request);
 
         verify(userSessionDao).deleteAll(List.of(existingSession));
-        verify(userSessionDao).insert(any(UserSession.class));
+        ArgumentCaptor<UserSession> newSessionCaptor = ArgumentCaptor.forClass(UserSession.class);
+        verify(userSessionDao).insert(newSessionCaptor.capture());
+        UserSession newSession = newSessionCaptor.getValue();
+        assertThat(newSession.getUserId()).isEqualTo(1L);
+        assertThat(newSession.getTokenHash()).isNotBlank();
     }
 
     private User buildUser(Long id, String userId, String email, String role) {
